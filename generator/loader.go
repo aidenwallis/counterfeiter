@@ -31,11 +31,7 @@ func (f *Fake) loadPackages(c Cacher, workingDir string) error {
 		}
 		importPath = bp.ImportPath
 	}
-	p, err := packages.Load(&packages.Config{
-		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax,
-		Dir:   workingDir,
-		Tests: true,
-	}, importPath)
+	p, err := packages.Load(loadConfig(workingDir), importPath)
 	if err != nil {
 		return err
 	}
@@ -76,6 +72,71 @@ func (f *Fake) loadPackages(c Cacher, workingDir string) error {
 	c.Store(f.TargetPackage, p)
 	log.Printf("loaded %v packages\n", len(f.Packages))
 	return nil
+}
+
+func loadConfig(workingDir string) *packages.Config {
+	return &packages.Config{
+		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax,
+		Dir:   workingDir,
+		Tests: true,
+	}
+}
+
+// Preload loads the given target packages, import paths or absolute
+// directories as NewFake takes them, with a single go/packages call and
+// stores each one in the cache. Every load pays for a go list run whatever
+// it asks for, so loading the targets of many fakes together is much faster
+// than letting each fake load its own. A target that does not load cleanly
+// is left out, and NewFake loads and reports it on its own as usual.
+func Preload(c Cacher, workingDir string, targets ...string) error {
+	if len(targets) == 0 {
+		return nil
+	}
+	pkgs, err := packages.Load(loadConfig(workingDir), targets...)
+	if err != nil {
+		return err
+	}
+	for _, target := range targets {
+		if _, ok := c.Load(target); ok {
+			continue
+		}
+		if group := preloadedGroup(pkgs, target); group != nil {
+			c.Store(target, group)
+		}
+	}
+	return nil
+}
+
+// preloadedGroup returns the packages that loading target on its own would
+// have returned: the package itself followed by its test variants, or nil if
+// the package is missing or has errors.
+func preloadedGroup(pkgs []*packages.Package, target string) []*packages.Package {
+	var root *packages.Package
+	for _, p := range pkgs {
+		if p.ID != p.PkgPath {
+			continue // a test variant
+		}
+		if p.PkgPath == target || (filepath.IsAbs(target) && sameDir(packageDir(p), target)) {
+			root = p
+			break
+		}
+	}
+	if root == nil {
+		return nil
+	}
+	for _, e := range root.Errors {
+		if !isBuildTranscript(e) {
+			return nil
+		}
+	}
+	testMain := root.PkgPath + ".test"
+	var group []*packages.Package
+	for _, p := range pkgs {
+		if p == root || p.ID == testMain || strings.HasSuffix(p.ID, " ["+testMain+"]") {
+			group = append(group, p)
+		}
+	}
+	return group
 }
 
 func (f *Fake) findPackage() error {

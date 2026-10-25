@@ -8,8 +8,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
+	"slices"
+	"sync"
 
 	"github.com/maxbrunsfeld/counterfeiter/v6/arguments"
 	"github.com/maxbrunsfeld/counterfeiter/v6/command"
@@ -76,16 +79,30 @@ func run() error {
 		return err
 	}
 
-	for i := range invocations {
+	parsed := make([]*arguments.ParsedArguments, len(invocations))
+	var targets []string
+	for i, inv := range invocations {
 		// Flags on the '//go:generate ... -generate' line are the defaults for
 		// every '//counterfeiter:generate' directive in the package.
-		a, err := arguments.New(invocations[i].Args, cwd, filepath.EvalSymlinks, os.Stat, arguments.WithDefaults(args))
+		parsed[i], err = arguments.New(inv.Args, inv.Dir, filepath.EvalSymlinks, os.Stat, arguments.WithDefaults(args))
 		if err != nil {
 			return err
 		}
+		if !slices.Contains(targets, parsed[i].PackagePath) {
+			targets = append(targets, parsed[i].PackagePath)
+		}
+	}
+	// One load for every target costs about as much as a load for one.
+	if len(targets) > 1 && !disableCache() {
+		if err := generator.Preload(cache, cwd, targets...); err != nil {
+			return err
+		}
+	}
 
-		err = generate(cwd, a, cache, headerReader)
-		if err != nil {
+	// Fakes are built in parallel but written in order, so the output and
+	// the files written before a failure are those of a sequential run.
+	for i, f := range buildAll(invocations, parsed, cache, headerReader) {
+		if err := write(cwd, parsed[i], f); err != nil {
 			return err
 		}
 	}
@@ -108,24 +125,52 @@ func invokedByGoGenerate() bool {
 	return os.Getenv("DOLLAR") == "$"
 }
 
-func generate(workingDir string, args *arguments.ParsedArguments, cache generator.Cacher, headerReader generator.FileReader) error {
+// fake is a generated fake, or the reason it could not be generated.
+type fake struct {
+	name string
+	code []byte
+	err  error
+}
+
+func buildAll(invocations []command.Invocation, parsed []*arguments.ParsedArguments, cache generator.Cacher, headerReader generator.FileReader) []fake {
+	fakes := make([]fake, len(invocations))
+	var wg sync.WaitGroup
+	limit := make(chan struct{}, runtime.GOMAXPROCS(0))
+	for i := range invocations {
+		wg.Add(1)
+		limit <- struct{}{}
+		go func() {
+			defer func() { <-limit; wg.Done() }()
+			fakes[i] = build(invocations[i].Dir, parsed[i], cache, headerReader)
+		}()
+	}
+	wg.Wait()
+	return fakes
+}
+
+func build(workingDir string, args *arguments.ParsedArguments, cache generator.Cacher, headerReader generator.FileReader) fake {
 	f, err := newFake(workingDir, args, cache, headerReader)
 	if err != nil {
-		return err
+		return fake{err: err}
 	}
+	b, err := f.Generate(true)
+	if err == nil {
+		b, err = format.Source(b)
+	}
+	return fake{name: f.Name, code: b, err: err}
+}
 
-	if !args.Quiet {
-		if err := reportStarting(workingDir, args.OutputPath, f.Name); err != nil {
+func write(workingDir string, args *arguments.ParsedArguments, f fake) error {
+	if f.name != "" && !args.Quiet {
+		if err := reportStarting(workingDir, args.OutputPath, f.name); err != nil {
 			return err
 		}
 	}
-
-	b, err := f.Generate(true)
-	if err != nil {
-		return err
+	if f.err != nil {
+		return f.err
 	}
 
-	if err := printCode(b, args.OutputPath, args.PrintToStdOut); err != nil {
+	if err := printCode(f.code, args.OutputPath, args.PrintToStdOut); err != nil {
 		return err
 	}
 
@@ -157,12 +202,7 @@ func newFake(workingDir string, args *arguments.ParsedArguments, cache generator
 	return generator.NewFake(mode, args.InterfaceName, args.PackagePath, args.FakeImplName, args.DestinationPackageName, headerContent, workingDir, cache, opts...)
 }
 
-func printCode(code []byte, outputPath string, printToStdOut bool) error {
-	formattedCode, err := format.Source(code)
-	if err != nil {
-		return err
-	}
-
+func printCode(formattedCode []byte, outputPath string, printToStdOut bool) error {
 	if printToStdOut {
 		fmt.Println(string(formattedCode))
 		return nil

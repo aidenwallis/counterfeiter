@@ -25,6 +25,7 @@ func Detect(cwd string, args []string, generateMode bool) ([]Invocation, error) 
 	if err != nil {
 		return nil, err
 	}
+	i.Dir = cwd
 	return []Invocation{i}, nil
 }
 
@@ -32,6 +33,9 @@ type Invocation struct {
 	Args []string
 	Line int
 	File string
+	// Dir is the directory the invocation runs in: relative paths in its
+	// arguments, and the fake's default location, are resolved against it.
+	Dir string
 }
 
 func NewInvocation(file string, line int, args []string) (Invocation, error) {
@@ -91,6 +95,7 @@ func invocationsInFile(dir string, file string) ([]Invocation, error) {
 		if err != nil {
 			return nil, err
 		}
+		inv.Dir = dir
 
 		result = append(result, inv)
 	}

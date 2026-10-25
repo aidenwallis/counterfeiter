@@ -46,7 +46,9 @@ func testConcurrency(t *testing.T, when spec.G, it spec.S) {
 		return f.Generate(true)
 	}
 
-	it("generates every kind of fake from many goroutines sharing one cache", func() {
+	// generateFromManyGoroutines generates every target from several goroutines
+	// sharing cache, and expects the same fakes as uncached, sequential runs.
+	generateFromManyGoroutines := func(cache generator.Cacher) {
 		expected := make([]string, len(targets))
 		for i, tt := range targets {
 			b, err := generate(tt, &generator.FakeCache{})
@@ -55,7 +57,6 @@ func testConcurrency(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		const workers = 4
-		cache := &generator.Cache{}
 		results := make([][]byte, workers*len(targets))
 		errs := make([]error, len(results))
 		var wg sync.WaitGroup
@@ -74,6 +75,24 @@ func testConcurrency(t *testing.T, when spec.G, it spec.S) {
 			g.Expect(errs[slot]).NotTo(HaveOccurred())
 			g.Expect(string(results[slot])).To(Equal(expected[slot%len(targets)]))
 		}
+	}
+
+	it("generates every kind of fake from many goroutines sharing one cache", func() {
+		generateFromManyGoroutines(&generator.Cache{})
+	})
+
+	it("generates every kind of fake from many goroutines sharing one preloaded cache", func() {
+		cache := &generator.Cache{}
+		var pkgs []string
+		for _, tt := range targets {
+			pkgs = append(pkgs, tt.pkg)
+		}
+		g.Expect(generator.Preload(cache, "", pkgs...)).To(Succeed())
+		for _, pkg := range pkgs {
+			_, ok := cache.Load(pkg)
+			g.Expect(ok).To(BeTrue(), pkg)
+		}
+		generateFromManyGoroutines(cache)
 	})
 
 	it("reads header files from many goroutines sharing one reader", func() {
