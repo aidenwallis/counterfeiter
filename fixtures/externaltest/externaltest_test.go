@@ -3,8 +3,8 @@ package externaltest_test
 import (
 	"testing"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/externaltest"
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/externaltest"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage"
 )
 
 // A black-box test in the external test package uses the fakes that were

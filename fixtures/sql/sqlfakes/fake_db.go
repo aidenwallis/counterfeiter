@@ -5,7 +5,7 @@ import (
 	sqla "database/sql"
 	"sync"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/sql"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/sql"
 )
 
 type FakeDB struct {

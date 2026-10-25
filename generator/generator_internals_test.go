@@ -96,7 +96,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			it("still finds it", func() {
 				c := &Cache{}
 				for _, target := range []string{"unexportedInterface", "unexportedFunc"} {
-					f, err = NewFake(InterfaceOrFunction, target, "github.com/maxbrunsfeld/counterfeiter/v6/fixtures", "Fake"+target, "fixturesfakes", "", "", c)
+					f, err = NewFake(InterfaceOrFunction, target, "github.com/aidenwallis/counterfeiter/v6/fixtures", "Fake"+target, "fixturesfakes", "", "", c)
 					g.Expect(err).NotTo(HaveOccurred(), target)
 					g.Expect(f.TargetName).To(Equal(target))
 				}
@@ -106,9 +106,9 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 		when("the target is a generic interface whose constraint comes from another package", func() {
 			it("imports the constraint's package and qualifies it with that package's name", func() {
 				c := &Cache{}
-				f, err = NewFake(InterfaceOrFunction, "GenericImportedConstraint", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures", "FakeGenericImportedConstraint", "fixturesfakes", "", "", c)
+				f, err = NewFake(InterfaceOrFunction, "GenericImportedConstraint", "github.com/aidenwallis/counterfeiter/v6/fixtures", "FakeGenericImportedConstraint", "fixturesfakes", "", "", c)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(f.Imports.ByPkgPath).To(HaveKey("github.com/maxbrunsfeld/counterfeiter/v6/fixtures/go-hyphenpackage"))
+				g.Expect(f.Imports.ByPkgPath).To(HaveKey("github.com/aidenwallis/counterfeiter/v6/fixtures/go-hyphenpackage"))
 				g.Expect(f.GenericTypeParametersAndConstraints).To(Equal("[T hyphenpackage.Hyphenated]"))
 				g.Expect(f.GenericTypeParameters).To(Equal("[T]"))
 			})
@@ -118,7 +118,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			it("joins that package rather than naming one after the directory", func() {
 				dir, err := filepath.Abs(filepath.Join("..", "fixtures", "seeded", "fakes"))
 				g.Expect(err).NotTo(HaveOccurred())
-				f, err = NewFake(InterfaceOrFunction, "Sower", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/seeded", "FakeSower", "fakes", "", "", &Cache{}, WithDestinationDir(dir))
+				f, err = NewFake(InterfaceOrFunction, "Sower", "github.com/aidenwallis/counterfeiter/v6/fixtures/seeded", "FakeSower", "fakes", "", "", &Cache{}, WithDestinationDir(dir))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(f.DestinationPackage).To(Equal("seeded_fakes"))
 				b, err := f.Generate(false)
@@ -128,7 +128,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			})
 
 			it("keeps the given name when the directory holds no Go files", func() {
-				f, err = NewFake(InterfaceOrFunction, "Sower", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/seeded", "FakeSower", "fakes", "", "", &Cache{}, WithDestinationDir(t.TempDir()))
+				f, err = NewFake(InterfaceOrFunction, "Sower", "github.com/aidenwallis/counterfeiter/v6/fixtures/seeded", "FakeSower", "fakes", "", "", &Cache{}, WithDestinationDir(t.TempDir()))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(f.DestinationPackage).To(Equal("fakes"))
 			})
@@ -141,7 +141,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			)
 
 			it.Before(func() {
-				pkgPath = "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage"
+				pkgPath = "github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage"
 				var err error
 				dir, err = filepath.Abs(filepath.Join("..", "fixtures", "samepackage"))
 				g.Expect(err).NotTo(HaveOccurred())
@@ -182,7 +182,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			it("names the package after the target's package, not its directory", func() {
 				hyphenDir, err := filepath.Abs(filepath.Join("..", "fixtures", "go-hyphenpackage"))
 				g.Expect(err).NotTo(HaveOccurred())
-				f, err = NewFake(InterfaceOrFunction, "Hyphenated", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/go-hyphenpackage", "FakeHyphenated", "gohyphenpackage", "", "", &Cache{}, WithDestinationDir(hyphenDir))
+				f, err = NewFake(InterfaceOrFunction, "Hyphenated", "github.com/aidenwallis/counterfeiter/v6/fixtures/go-hyphenpackage", "FakeHyphenated", "gohyphenpackage", "", "", &Cache{}, WithDestinationDir(hyphenDir))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(f.DestinationPackage).To(Equal("hyphenpackage"))
 				b, err := f.Generate(false)
@@ -315,8 +315,8 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 				fixtures,
 				filepath.Join(fixtures, "externaltest"),
 				"io",
-				"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/genericinterface",
-				"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage",
+				"github.com/aidenwallis/counterfeiter/v6/fixtures/genericinterface",
+				"github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage",
 			}
 			c := &Cache{}
 			g.Expect(Preload(c, "", targets...)).To(Succeed())
@@ -364,21 +364,21 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 		when("duplicate import package names are added", func() {
 			it.Before(func() {
 				f.Imports.Add("sync", "sync")
-				f.Imports.Add("sync", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/sync")
-				f.Imports.Add("sync", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/othersync")
+				f.Imports.Add("sync", "github.com/aidenwallis/counterfeiter/v6/fixtures/sync")
+				f.Imports.Add("sync", "github.com/aidenwallis/counterfeiter/v6/fixtures/othersync")
 			})
 
 			it("all packages have unique aliases", func() {
 				g.Expect(f.Imports).To(BeEquivalentTo(Imports{
 					ByAlias: map[string]Import{
 						"sync":  {Alias: "sync", PkgPath: "sync"},
-						"synca": {Alias: "synca", PkgPath: "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/sync"},
-						"syncb": {Alias: "syncb", PkgPath: "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/othersync"},
+						"synca": {Alias: "synca", PkgPath: "github.com/aidenwallis/counterfeiter/v6/fixtures/sync"},
+						"syncb": {Alias: "syncb", PkgPath: "github.com/aidenwallis/counterfeiter/v6/fixtures/othersync"},
 					},
 					ByPkgPath: map[string]Import{
 						"sync": {Alias: "sync", PkgPath: "sync"},
-						"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/sync":      {Alias: "synca", PkgPath: "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/sync"},
-						"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/othersync": {Alias: "syncb", PkgPath: "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/othersync"},
+						"github.com/aidenwallis/counterfeiter/v6/fixtures/sync":      {Alias: "synca", PkgPath: "github.com/aidenwallis/counterfeiter/v6/fixtures/sync"},
+						"github.com/aidenwallis/counterfeiter/v6/fixtures/othersync": {Alias: "syncb", PkgPath: "github.com/aidenwallis/counterfeiter/v6/fixtures/othersync"},
 					},
 				}))
 			})
@@ -487,7 +487,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 				})
 
 				it("turns a vendor path into the correct import", func() {
-					i := f.Imports.Add("apackage", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/vendored/vendor/apackage")
+					i := f.Imports.Add("apackage", "github.com/aidenwallis/counterfeiter/v6/fixtures/vendored/vendor/apackage")
 					g.Expect(i.Alias).To(Equal("apackage"))
 					g.Expect(i.PkgPath).To(Equal("apackage"))
 

@@ -9,7 +9,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/configmode"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/configmode"
 )
 
 type Gizmo struct {

@@ -1,4 +1,4 @@
-# `counterfeiter` [![GitHub Actions](https://github.com/maxbrunsfeld/counterfeiter/actions/workflows/go.yml/badge.svg)](https://github.com/maxbrunsfeld/counterfeiter/actions/workflows/go.yml) [![Go Reference](https://pkg.go.dev/badge/github.com/maxbrunsfeld/counterfeiter/v6.svg)](https://pkg.go.dev/github.com/maxbrunsfeld/counterfeiter/v6)
+# `counterfeiter` [![GitHub Actions](https://github.com/aidenwallis/counterfeiter/actions/workflows/go.yml/badge.svg)](https://github.com/aidenwallis/counterfeiter/actions/workflows/go.yml) [![Go Reference](https://pkg.go.dev/badge/github.com/aidenwallis/counterfeiter/v6.svg)](https://pkg.go.dev/github.com/aidenwallis/counterfeiter/v6)
 
 Go code declares what it needs from its dependencies as interfaces, usually small ones
 defined by the package that uses them. Testing that code means supplying fake
@@ -41,7 +41,7 @@ Expect(str).To(Equal("stuff"))
 Establish a tool dependency on counterfeiter by running the following command:
 
 ```shell
-go get -tool github.com/maxbrunsfeld/counterfeiter/v6
+go get -tool github.com/aidenwallis/counterfeiter/v6
 ```
 
 ### Step 2 - Add directives
@@ -366,7 +366,7 @@ For more examples of using the `counterfeiter` API, look at [some of the provide
 
 ## Command reference
 
-`go tool counterfeiter -help` prints the following. Outside a module, `go install github.com/maxbrunsfeld/counterfeiter/v6@latest` puts a `counterfeiter` binary in `$GOPATH/bin` that takes the same arguments.
+`go tool counterfeiter -help` prints the following. Outside a module, `go install github.com/aidenwallis/counterfeiter/v6@latest` puts a `counterfeiter` binary in `$GOPATH/bin` that takes the same arguments.
 
 ```text
 USAGE

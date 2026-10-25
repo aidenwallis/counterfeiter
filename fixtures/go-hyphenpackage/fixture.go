@@ -1,4 +1,4 @@
-package hyphenpackage // import "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/go-hyphenpackage"
+package hyphenpackage // import "github.com/aidenwallis/counterfeiter/v6/fixtures/go-hyphenpackage"
 
 type HyphenType struct{}
 
@@ -7,7 +7,7 @@ type HyphenType struct{}
 // generated into this directory must use the package name, not the
 // directory name.
 //
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o . . Hyphenated
+//go:generate go run github.com/aidenwallis/counterfeiter/v6 -o . . Hyphenated
 type Hyphenated interface {
 	Hyphen() string
 }

@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/generator"
+	"github.com/aidenwallis/counterfeiter/v6/generator"
 )
 
 func runTests(t *testing.T, when spec.G, it spec.S) {
@@ -62,7 +62,7 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 		}
 		initModuleFunc = func() {
 			copyFileFunc("blank.go")
-			err := os.WriteFile(filepath.Join(baseDir, "go.mod"), []byte("module github.com/maxbrunsfeld/counterfeiter/v6/fixtures\n\ngo 1.18\n"), 0755)
+			err := os.WriteFile(filepath.Join(baseDir, "go.mod"), []byte("module github.com/aidenwallis/counterfeiter/v6/fixtures\n\ngo 1.18\n"), 0755)
 			g.Expect(err).ToNot(HaveOccurred())
 		}
 		// Set this to true to write the output of tests to the testdata/output
@@ -128,7 +128,7 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 		})
 		it("imports the aliased type, not the underlying type", func() {
 			cache := &generator.FakeCache{}
-			pkgPath := "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/type_aliases"
+			pkgPath := "github.com/aidenwallis/counterfeiter/v6/fixtures/type_aliases"
 			interfaceName := "WithAliasedType"
 			fakePackageName := "type_aliasesfakes"
 			f, err := generator.NewFake(generator.InterfaceOrFunction, interfaceName, pkgPath, "Fake"+interfaceName, fakePackageName, "", baseDir, cache)
@@ -136,7 +136,7 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 			b, err := f.Generate(false)
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(string(b)).NotTo(ContainSubstring("primitive"))
-			g.Expect(string(b)).To(ContainSubstring(`"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/type_aliases/extra"`))
+			g.Expect(string(b)).To(ContainSubstring(`"github.com/aidenwallis/counterfeiter/v6/fixtures/type_aliases/extra"`))
 		})
 	})
 
@@ -145,12 +145,12 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 			baseDir = filepath.Join(baseDir, "samepackage")
 			relativeDir = filepath.Join(relativeDir, "samepackage")
 			copyFileFunc("samepackage.go")
-			WriteOutput([]byte("module github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage\n\ngo 1.18\n"), filepath.Join(baseDir, "go.mod"))
+			WriteOutput([]byte("module github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage\n\ngo 1.18\n"), filepath.Join(baseDir, "go.mod"))
 		})
 
 		it("builds without an import cycle, for exported and unexported interfaces", func() {
 			cache := &generator.FakeCache{}
-			pkgPath := "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage"
+			pkgPath := "github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage"
 			for _, target := range []struct{ name, fake, file string }{
 				{"Widget", "FakeWidget", "fake_widget.go"},
 				{"gadget", "fakeGadget", "fake_gadget.go"},
@@ -167,7 +167,7 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 
 		it("regenerates after the interface changed, even though the stale fake no longer compiles", func() {
 			cache := &generator.FakeCache{}
-			pkgPath := "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage"
+			pkgPath := "github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage"
 			generate := func() {
 				f, err := generator.NewFake(generator.InterfaceOrFunction, "Widget", pkgPath, "FakeWidget", "samepackage", "", baseDir, cache, generator.WithDestinationDir(baseDir))
 				g.Expect(err).NotTo(HaveOccurred())
@@ -193,13 +193,13 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 			baseDir = filepath.Join(baseDir, "samepackage")
 			relativeDir = filepath.Join(relativeDir, "samepackage")
 			copyFileFunc("samepackage.go")
-			WriteOutput([]byte("module github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage\n\ngo 1.18\n"), filepath.Join(baseDir, "go.mod"))
+			WriteOutput([]byte("module github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage\n\ngo 1.18\n"), filepath.Join(baseDir, "go.mod"))
 			WriteOutput([]byte("package samepackage_test\n\nimport \"testing\"\n\nfunc TestFake(t *testing.T) {\n\tw := &FakeWidget{}\n\tif w.DoCallCount() != 0 {\n\t\tt.Fatal(\"unexpected call\")\n\t}\n}\n"), filepath.Join(baseDir, "samepackage_test.go"))
 		})
 
 		it("imports the package under test and vets together with the black-box tests", func() {
 			cache := &generator.FakeCache{}
-			pkgPath := "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage"
+			pkgPath := "github.com/aidenwallis/counterfeiter/v6/fixtures/samepackage"
 			f, err := generator.NewFake(generator.InterfaceOrFunction, "Widget", pkgPath, "FakeWidget", "samepackage_test", "", baseDir, cache, generator.WithDestinationDir(baseDir), generator.WithTestPackage())
 			g.Expect(err).NotTo(HaveOccurred())
 			b, err := f.Generate(true)
@@ -317,9 +317,9 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 					if suffix != "" {
 						suffix = "/" + suffix
 					}
-					WriteOutput([]byte(fmt.Sprintf("module github.com/maxbrunsfeld/counterfeiter/v6/fixtures%s\n\ngo 1.18\n", suffix)), filepath.Join(baseDir, "go.mod"))
+					WriteOutput([]byte(fmt.Sprintf("module github.com/aidenwallis/counterfeiter/v6/fixtures%s\n\ngo 1.18\n", suffix)), filepath.Join(baseDir, "go.mod"))
 					cache := &generator.FakeCache{}
-					f, err := generator.NewFake(generator.InterfaceOrFunction, interfaceName, fmt.Sprintf("github.com/maxbrunsfeld/counterfeiter/v6/fixtures%s", suffix), "Fake"+interfaceName, "fixturesfakes", "", baseDir, cache)
+					f, err := generator.NewFake(generator.InterfaceOrFunction, interfaceName, fmt.Sprintf("github.com/aidenwallis/counterfeiter/v6/fixtures%s", suffix), "Fake"+interfaceName, "fixturesfakes", "", baseDir, cache)
 					g.Expect(err).NotTo(HaveOccurred())
 					b, err := f.Generate(true) // Flip to false to see output if goimports fails
 					g.Expect(err).NotTo(HaveOccurred())
@@ -361,7 +361,7 @@ func runTests(t *testing.T, when spec.G, it spec.S) {
 					})
 
 					it("succeeds", func() {
-						pkgPath := "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/dup_packages"
+						pkgPath := "github.com/aidenwallis/counterfeiter/v6/fixtures/dup_packages"
 						if offset != "" {
 							pkgPath = pkgPath + "/" + offset
 						}

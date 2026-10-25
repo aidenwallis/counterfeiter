@@ -4,7 +4,7 @@ package otherfakes
 import (
 	"sync"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/generate_defaults"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/generate_defaults"
 )
 
 type Ponger struct {

@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6
+//go:generate go run github.com/aidenwallis/counterfeiter/v6
 
 type Widget interface {
 	Spin(speed int) error

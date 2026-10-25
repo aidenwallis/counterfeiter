@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/generator"
+	"github.com/aidenwallis/counterfeiter/v6/generator"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -33,10 +33,10 @@ func testConcurrency(t *testing.T, when spec.G, it spec.S) {
 		destination string
 	}
 	targets := []target{
-		{generator.InterfaceOrFunction, "Something", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures", "FakeSomething", "fixturesfakes"},
-		{generator.InterfaceOrFunction, "SomethingFactory", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures", "FakeSomethingFactory", "fixturesfakes"},
-		{generator.InterfaceOrFunction, "GenericInterface", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/genericinterface", "FakeGenericInterface", "genericinterfacefakes"},
-		{generator.Package, "", "github.com/maxbrunsfeld/counterfeiter/v6/fixtures/packagemode", "Packagemode", "packagemodeshim"},
+		{generator.InterfaceOrFunction, "Something", "github.com/aidenwallis/counterfeiter/v6/fixtures", "FakeSomething", "fixturesfakes"},
+		{generator.InterfaceOrFunction, "SomethingFactory", "github.com/aidenwallis/counterfeiter/v6/fixtures", "FakeSomethingFactory", "fixturesfakes"},
+		{generator.InterfaceOrFunction, "GenericInterface", "github.com/aidenwallis/counterfeiter/v6/fixtures/genericinterface", "FakeGenericInterface", "genericinterfacefakes"},
+		{generator.Package, "", "github.com/aidenwallis/counterfeiter/v6/fixtures/packagemode", "Packagemode", "packagemodeshim"},
 	}
 	generate := func(tt target, cache generator.Cacher) ([]byte, error) {
 		f, err := generator.NewFake(tt.mode, tt.name, tt.pkg, tt.fake, tt.destination, "", "", cache)

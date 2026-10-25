@@ -4,7 +4,7 @@ package genericinterfacefakes
 import (
 	"sync"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/genericinterface"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/genericinterface"
 )
 
 type FakeGenericInterface[T genericinterface.CustomTypeT] struct {

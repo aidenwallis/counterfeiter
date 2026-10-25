@@ -4,7 +4,7 @@ package externalpkgfakes
 import (
 	"sync"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/internalpkg"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/internalpkg"
 )
 
 type FakeContext struct {

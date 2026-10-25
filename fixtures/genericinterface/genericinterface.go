@@ -1,6 +1,6 @@
 package genericinterface
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//go:generate go run github.com/aidenwallis/counterfeiter/v6 -generate
 
 type CustomTypeT any
 type CustomTypeU any

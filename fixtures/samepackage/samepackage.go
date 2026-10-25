@@ -3,8 +3,8 @@ package samepackage
 // Fakes written into the package that declares the interface must not
 // import that package, and may reference unexported names.
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o . . Widget
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o . . gadget
+//go:generate go run github.com/aidenwallis/counterfeiter/v6 -o . . Widget
+//go:generate go run github.com/aidenwallis/counterfeiter/v6 -o . . gadget
 
 type Thing struct {
 	Name string

@@ -4,7 +4,7 @@ package externaltest_test
 import (
 	"sync"
 
-	"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/externaltest"
+	"github.com/aidenwallis/counterfeiter/v6/fixtures/externaltest"
 )
 
 type FakeThing struct {
