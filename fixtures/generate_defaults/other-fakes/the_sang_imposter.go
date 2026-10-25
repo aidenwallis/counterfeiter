@@ -10,8 +10,9 @@ import (
 type TheSangImposter struct {
 	SangStub        func() string
 	sangMutex       sync.RWMutex
-	sangArgsForCall []struct{}
-	sangReturns     struct {
+	sangArgsForCall []struct {
+	}
+	sangReturns struct {
 		result1 string
 	}
 	sangReturnsOnCall map[int]struct {
@@ -25,7 +26,8 @@ type TheSangImposter struct {
 func (fake *TheSangImposter) Sang() string {
 	fake.sangMutex.Lock()
 	ret, specificReturn := fake.sangReturnsOnCall[len(fake.sangArgsForCall)]
-	fake.sangArgsForCall = append(fake.sangArgsForCall, struct{}{})
+	fake.sangArgsForCall = append(fake.sangArgsForCall, struct {
+	}{})
 	stub := fake.SangStub
 	fakeReturns := fake.sangReturns
 	fake.recordInvocation("Sang", []interface{}{})

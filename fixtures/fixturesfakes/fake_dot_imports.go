@@ -13,8 +13,11 @@ import (
 type FakeDotImports struct {
 	DoThingsStub        func(io.Writer, *os.File) *http.Client
 	doThingsMutex       sync.RWMutex
-	doThingsArgsForCall []FakeDotImportsDoThingsArgs
-	doThingsReturns     struct {
+	doThingsArgsForCall []struct {
+		arg1 io.Writer
+		arg2 *os.File
+	}
+	doThingsReturns struct {
 		result1 *http.Client
 	}
 	doThingsReturnsOnCall map[int]struct {
@@ -25,16 +28,13 @@ type FakeDotImports struct {
 	invocationsMutex sync.RWMutex
 }
 
-// FakeDotImportsDoThingsArgs holds the arguments of one call to DoThings.
-type FakeDotImportsDoThingsArgs struct {
-	Arg1 io.Writer
-	Arg2 *os.File
-}
-
 func (fake *FakeDotImports) DoThings(arg1 io.Writer, arg2 *os.File) *http.Client {
 	fake.doThingsMutex.Lock()
 	ret, specificReturn := fake.doThingsReturnsOnCall[len(fake.doThingsArgsForCall)]
-	fake.doThingsArgsForCall = append(fake.doThingsArgsForCall, FakeDotImportsDoThingsArgs{arg1, arg2})
+	fake.doThingsArgsForCall = append(fake.doThingsArgsForCall, struct {
+		arg1 io.Writer
+		arg2 *os.File
+	}{arg1, arg2})
 	stub := fake.DoThingsStub
 	fakeReturns := fake.doThingsReturns
 	fake.recordInvocation("DoThings", []interface{}{arg1, arg2})
@@ -64,15 +64,7 @@ func (fake *FakeDotImports) DoThingsArgsForCall(i int) (io.Writer, *os.File) {
 	fake.doThingsMutex.RLock()
 	defer fake.doThingsMutex.RUnlock()
 	argsForCall := fake.doThingsArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
-}
-
-func (fake *FakeDotImports) DoThingsArgs() []FakeDotImportsDoThingsArgs {
-	fake.doThingsMutex.RLock()
-	defer fake.doThingsMutex.RUnlock()
-	args := make([]FakeDotImportsDoThingsArgs, len(fake.doThingsArgsForCall))
-	copy(args, fake.doThingsArgsForCall)
-	return args
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeDotImports) DoThingsReturns(result1 *http.Client) {
