@@ -46,48 +46,66 @@ go get -tool github.com/aidenwallis/counterfeiter/v7
 
 ### Step 2 - Add directives
 
-Add one `go:generate` directive that runs `counterfeiter -generate`, and one `counterfeiter:generate` directive per interface you want a fake for. You can add them right next to your interface definitions (or not), in any `.go` file in the package.
+You need two kinds of directive: **one** `go:generate` line for the whole module, which runs `counterfeiter -generate`, and a `counterfeiter:generate` line for each interface you want a fake for.
 
-In `myinterface.go`:
+Put the `go:generate` line in the package at the root of your module, in a file of its own if you like:
 
 ```go
-package foo
+// generate.go, at the root of the module
+package myapp
 
-// You only need **one** of these for your whole module!
 //go:generate go tool counterfeiter -generate
-
-// You will add lots of directives like these in the same package...
-//counterfeiter:generate . MySpecialInterface
-type MySpecialInterface interface {
-	DoThings(string, uint64) (int, error)
-}
-
-// Like this...
-//counterfeiter:generate . MyOtherInterface
-type MyOtherInterface interface {
-	DoOtherThings(string, uint64) (int, error)
-}
 ```
 
-A `counterfeiter:generate` directive takes the same arguments as the command line: the directory of the package that declares the interface (`.` for the package the directive is in) and the name of the interface, plus any of the flags described below.
+That is the only `go:generate` line you add. When it runs, `counterfeiter` reads every package in the module, the root and every package below it, for `counterfeiter:generate` directives, and generates all of their fakes in one process.
 
-If a package only has an interface or two, you can skip `-generate` and the `counterfeiter:generate` directives, and run `counterfeiter` directly from one `go:generate` line per interface instead:
+Then put a `counterfeiter:generate` directive next to each interface you want faked, in whichever package declares it:
 
 ```go
-//go:generate go tool counterfeiter . MySpecialInterface
+// internal/store/store.go
+package store
+
+//counterfeiter:generate . Repository
+type Repository interface {
+	Get(id string) (Item, error)
+}
+
+//counterfeiter:generate . Cache
+type Cache interface {
+	Fetch(key string) ([]byte, bool)
+}
 ```
 
-`-generate` is much faster once there are several directives in a package, because it loads the package once and writes every fake from one process, where each `go:generate` line starts a new one. To generate fakes for other packages from the same `go:generate` line, point a directive at their directory, for example `//counterfeiter:generate ./otherpackage OtherInterface`.
+```go
+// api/api.go
+package api
+
+//counterfeiter:generate . Presenter
+type Presenter interface {
+	Show(Item) error
+}
+```
+
+A `counterfeiter:generate` directive takes the same arguments as the command line, relative to the directory of the file it is in: the directory of the package that declares the interface (`.` for the package the directive is in) and the name of the interface, plus any of the flags described below.
+
+A few things are left out of the search:
+
+- A package with a `-generate` line of its own is left to that line, along with the packages below it, so a module that already has one such line per package keeps working.
+- Nested modules (directories with their own `go.mod`) are skipped; give each one its own `go:generate` line.
+- As with `go` itself, `testdata` and `vendor` directories and directories starting with `.` or `_` are skipped.
 
 ### Step 3 - Run `go generate`
 
-You can run `go generate` in the directory with your directive, or in the root of your module (to ensure you generate for all packages in your module):
+Run `go generate` from the root of your module:
 
 ```shell
 $ go generate ./...
-Writing `FakeMySpecialInterface` to `foofakes/fake_my_special_interface.go`... Done
-Writing `FakeMyOtherInterface` to `foofakes/fake_my_other_interface.go`... Done
+Writing `FakeRepository` to `internal/store/storefakes/fake_repository.go`... Done
+Writing `FakeCache` to `internal/store/storefakes/fake_cache.go`... Done
+Writing `FakePresenter` to `api/apifakes/fake_presenter.go`... Done
 ```
+
+Every fake goes next to the package that declares its interface. Run `go generate ./...` again whenever an interface changes.
 
 ## Defaults
 
@@ -104,23 +122,27 @@ Every fake ends with a compile-time assertion that it satisfies the interface, s
 
 ## Common Setups
 
-The examples below are `counterfeiter:generate` directives, and assume the package has the `//go:generate go tool counterfeiter -generate` line from Step 2. You need only one of those, no matter how many directives you have.
+The examples below are `counterfeiter:generate` directives, and assume the module has the one `//go:generate go tool counterfeiter -generate` line from Step 2.
 
-### Shared settings for every directive in a package
+### Shared settings for every directive
 
-Flags given alongside `-generate` on the `//go:generate` line are the defaults for every `//counterfeiter:generate` directive in the package: `-o`, `-header`, `-q`, `-test` and `-fake-name-template`. A directive's own flags take precedence. So if you would rather keep all of a package's fakes in a `fake` package, named after their interfaces, you can write that once:
+Flags given alongside `-generate` on the `//go:generate` line are the defaults for every `//counterfeiter:generate` directive it runs: `-o`, `-header`, `-q`, `-test` and `-fake-name-template`. A directive's own flags take precedence. `-o` is relative to each directive's directory, and `-header` to the `go:generate` line. So if you would rather keep each package's fakes in a `fake` package inside it, named after their interfaces, you can write that once:
 
 ```go
+// generate.go, at the root of the module
 //go:generate go tool counterfeiter -generate -o fake -fake-name-template '{{.TargetName}}'
+```
 
-//counterfeiter:generate . MyRepository
-//counterfeiter:generate . MyPresenter
+```go
+// internal/store/store.go
+//counterfeiter:generate . Repository
+//counterfeiter:generate . Cache
 ```
 
 ```shell
 $ go generate ./...
-Writing `MyRepository` to `fake/my_repository.go`... Done
-Writing `MyPresenter` to `fake/my_presenter.go`... Done
+Writing `Repository` to `internal/store/fake/repository.go`... Done
+Writing `Cache` to `internal/store/fake/cache.go`... Done
 ```
 
 ### Interfaces from other packages, the standard library or third-party modules
@@ -187,10 +209,10 @@ Writing `MyPresenterDouble` to `foofakes/my_presenter_double.go`... Done
 
 ### A header on every fake
 
-`-header` prepends the contents of a file to every generated fake, for a licence header for example. Set it once on the `-generate` line, or per directive.
+`-header` prepends the contents of a file to every generated fake, for a licence header for example. Set it once on the `-generate` line, relative to that line, or per directive.
 
 ```go
-//go:generate go tool counterfeiter -generate -header ../LICENSE.header
+//go:generate go tool counterfeiter -generate -header hack/LICENSE.header
 ```
 
 ### Faking a function type
@@ -337,42 +359,49 @@ ARGUMENTS
 
 OPTIONS
 	-generate
-		Identify all //counterfeiter:generate directives in .go files in the
-		current working directory and generate fakes for them. You can pass
-		arguments as usual.
+		Find every //counterfeiter:generate directive in the package in the
+		current working directory and in all packages below it, and generate
+		fakes for them in one process. Run it from one //go:generate line in
+		the package at the root of your module, and it covers the whole
+		module:
 
-		NOTE: This is not the same as //go:generate directives
-		(used with the 'go generate' command), but it can be combined with
-		go generate by adding the following to a .go file:
-
-		# runs counterfeiter in generate mode
+		# generate.go, at the root of the module
 		//go:generate go tool counterfeiter -generate
 
+		Each directive takes the same arguments as the command line,
+		relative to the directory of the file it is in. A package with a
+		-generate line of its own is left to that line, along with the
+		packages below it. Nested modules, testdata and vendor directories,
+		and directories starting with "." or "_" are skipped.
+
 	example:
-		Add the following to a .go file:
+		# in ./store/store.go
+		//counterfeiter:generate . Repository
+		# in ./api/api.go
+		//counterfeiter:generate . Presenter
+		//counterfeiter:generate io.WriteCloser
 
-		//counterfeiter:generate . MyInterface
-		//counterfeiter:generate . MyOtherInterface
-		//counterfeiter:generate . MyThirdInterface
-
-		# run counterfeiter
-		counterfeiter -generate
-		# writes "FakeMyInterface" to ./mypackagefakes/fake_my_interface.go
-		# writes "FakeMyOtherInterface" to ./mypackagefakes/fake_my_other_interface.go
-		# writes "FakeMyThirdInterface" to ./mypackagefakes/fake_my_third_interface.go
+		# run from the module root
+		go generate ./...
+		# writes "FakeRepository" to ./store/storefakes/fake_repository.go
+		# writes "FakePresenter" to ./api/apifakes/fake_presenter.go
+		# writes "FakeWriteCloser" to ./api/apifakes/fake_write_closer.go
 
 		The -o, -fake-name-template, -header, -q and -test flags given
-		alongside -generate are the defaults for every directive. A directive's
-		own flags take precedence.
+		alongside -generate are the defaults for every directive it runs.
+		A directive's own flags take precedence. -o is relative to each
+		directive's directory; -header is relative to the -generate line.
 
 	example:
-		# every fake goes into ./fake and is named after its interface
+		# every package's fakes go into its ./fake and are named after their interface
 		//go:generate go tool counterfeiter -generate -o fake -fake-name-template {{.TargetName}}
-		//counterfeiter:generate . MyInterface
-		//counterfeiter:generate -o otherfake . MyOtherInterface
 
-		# writes "MyInterface" to ./fake/my_interface.go
-		# writes "MyOtherInterface" to ./otherfake/my_other_interface.go
+		# in ./store/store.go
+		//counterfeiter:generate . Repository
+		//counterfeiter:generate -o otherfake . Cache
+
+		# writes "Repository" to ./store/fake/repository.go
+		# writes "Cache" to ./store/otherfake/cache.go
 
 	-o
 		Path to the file or directory for the generated fakes.
@@ -428,7 +457,7 @@ OPTIONS
 		By default, no special header is used.
 		This is useful to e.g. add a licence header to every fake.
 
-		In generate mode the header can be set once for the whole package on
+		In generate mode the header can be set once for every directive on
 		the "go:generate" line; a "counterfeiter:generate" line that specifies
 		its own header file takes precedence.
 
@@ -459,7 +488,7 @@ OPTIONS
 		A text/template for the name of the fake struct, used when -fake-name
 		is not given. {{.TargetName}} is the name of the interface being faked,
 		with its first letter upper-cased. In generate mode it can be set once
-		for the whole package on the "go:generate" line. (ignored in -p mode)
+		for every directive on the "go:generate" line. (ignored in -p mode)
 
 	example:
 		# writes "MyInterfaceDouble" to ./mypackagefakes/my_interface_double.go
@@ -467,7 +496,6 @@ OPTIONS
 
 	-q
 		Suppress the "Writing ..." status lines. Errors are still reported.
-
 ```
 
 ## Supported Versions Of `go`

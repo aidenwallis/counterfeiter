@@ -1,10 +1,13 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"go/build"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,12 +53,54 @@ func NewInvocation(file string, line int, args []string) (Invocation, error) {
 	return i, nil
 }
 
+// generateModeInvocations collects the '//counterfeiter:generate' directives
+// of the package in cwd and of every package below it, down to the next
+// package with a '-generate' line of its own, which go generate runs
+// separately. Nested modules, and directories the go command ignores, are
+// skipped. Each directive runs in the directory of the file it is in.
 func generateModeInvocations(cwd string) ([]Invocation, error) {
 	var result []Invocation
-	// Find all the go files
-	pkg, err := build.ImportDir(cwd, build.IgnoreVendor)
+	err := filepath.WalkDir(cwd, func(dir string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() {
+			return nil
+		}
+		if dir != cwd && ignoredDir(dir, d.Name()) {
+			return filepath.SkipDir
+		}
+		invocations, ownGenerateLine, err := invocationsInDir(dir)
+		if err != nil {
+			return err
+		}
+		if dir != cwd && ownGenerateLine {
+			return filepath.SkipDir
+		}
+		result = append(result, invocations...)
+		return nil
+	})
+	return result, err
+}
+
+func ignoredDir(dir, name string) bool {
+	if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") || name == "testdata" || name == "vendor" {
+		return true
+	}
+	_, err := os.Stat(filepath.Join(dir, "go.mod"))
+	return err == nil
+}
+
+// invocationsInDir returns the directives in the package in dir, and whether
+// the package has a '//go:generate' line running counterfeiter -generate.
+func invocationsInDir(dir string) ([]Invocation, bool, error) {
+	pkg, err := build.ImportDir(dir, build.IgnoreVendor)
+	var noGo *build.NoGoError
+	if errors.As(err, &noGo) {
+		return nil, false, nil
+	}
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	gofiles := make([]string, 0, len(pkg.GoFiles)+len(pkg.CgoFiles)+len(pkg.TestGoFiles)+len(pkg.XTestGoFiles))
@@ -65,42 +110,55 @@ func generateModeInvocations(cwd string) ([]Invocation, error) {
 	gofiles = append(gofiles, pkg.XTestGoFiles...)
 	sort.Strings(gofiles)
 
+	var result []Invocation
+	ownGenerateLine := false
 	for _, file := range gofiles {
-		invocations, err := invocationsInFile(cwd, file)
+		invocations, generateLine, err := invocationsInFile(dir, file)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		result = append(result, invocations...)
+		ownGenerateLine = ownGenerateLine || generateLine
 	}
-
-	return result, nil
+	return result, ownGenerateLine, nil
 }
 
-func invocationsInFile(dir string, file string) ([]Invocation, error) {
+func invocationsInFile(dir string, file string) ([]Invocation, bool, error) {
 	str, err := os.ReadFile(filepath.Join(dir, file))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	lines := strings.Split(string(str), "\n")
 
 	var result []Invocation
+	generateLine := false
 	line := 0
 	for i := range lines {
 		line++
+		generateLine = generateLine || isGenerateLine(lines[i])
 		args, ok := matchForString(lines[i])
 		if !ok {
 			continue
 		}
 		inv, err := NewInvocation(file, line, args)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		inv.Dir = dir
 
 		result = append(result, inv)
 	}
 
-	return result, nil
+	return result, generateLine, nil
+}
+
+// isGenerateLine reports whether s is a '//go:generate' line that runs
+// counterfeiter in generate mode.
+func isGenerateLine(s string) bool {
+	fields := strings.Fields(strings.TrimSuffix(s, "\r"))
+	return len(fields) > 0 && fields[0] == "//go:generate" &&
+		slices.ContainsFunc(fields, func(f string) bool { return strings.Contains(f, "counterfeiter") }) &&
+		slices.Contains(fields, "-generate")
 }
 
 const generateDirectivePrefix = "//counterfeiter:generate "

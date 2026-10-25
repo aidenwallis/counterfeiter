@@ -125,6 +125,11 @@ func New(args []string, workingDir string, evaler Evaler, stater Stater, opts ..
 	}
 	if *generateFlag {
 		// Keep the raw flag values: they become the defaults for every directive.
+		// Directives below this package run in their own directories, so
+		// the one header file is found relative to this line.
+		if result.HeaderFile != "" && !filepath.IsAbs(result.HeaderFile) {
+			result.HeaderFile = filepath.Join(workingDir, result.HeaderFile)
+		}
 		result.OutputPath = outputPath
 		result.FakeNameTemplate = fakeNameTemplateText
 		return result, nil
