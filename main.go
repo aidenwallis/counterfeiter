@@ -71,7 +71,7 @@ func run() error {
 	if args != nil {
 		generateMode = args.GenerateMode
 	}
-	if !generateMode && len(os.Args) > 1 && shouldPrintGenerateWarning() {
+	if !generateMode && shouldPrintGenerateWarning() {
 		fmt.Printf("\nWARNING: Invoking counterfeiter multiple times from \"go generate\" is slow.\nConsider using counterfeiter:generate directives to speed things up.\nSee https://github.com/aidenwallis/counterfeiter#step-2---add-directives for more information.\nSet the \"COUNTERFEITER_NO_GENERATE_WARNING\" environment variable to suppress this message.\n\n")
 	}
 	invocations, err = command.Detect(cwd, os.Args, generateMode)
