@@ -7,6 +7,10 @@ USAGE
 		[-fake-name-template <template>] [-header <header-file>] [-q] [-test]
 		[<source-path>] <interface> [-]
 
+	counterfeiter
+		With no arguments, generate the fakes described by the closest
+		.counterfeiter.yaml (see CONFIG FILE).
+
 ARGUMENTS
 	source-path
 		Path to the file or directory containing the interface to fake.
@@ -161,4 +165,54 @@ OPTIONS
 
 	-q
 		Suppress the "Writing ..." status lines. Errors are still reported.
+
+CONFIG FILE
+	Run without arguments, counterfeiter reads .counterfeiter.yaml (or
+	.counterfeiter.yml) from the current directory, or the closest
+	directory above it within the module, and generates every fake it
+	describes in one process. That is much faster than a -generate line
+	per package: every package is loaded at once and the fakes are
+	generated in parallel.
+
+	The options o, header, fake-name-template, test and q mean what the
+	flags of the same name mean. At the top level they apply to every
+	fake; on a package or an interface they override what is above them.
+	An interface can also set fake-name. header is relative to the config
+	file.
+
+	directives
+		Package patterns, as for go list, whose //counterfeiter:generate
+		directives are run as -generate would run them, with the top
+		level's options as defaults. Remove those packages' own
+		"go:generate ... -generate" lines if the config is run from
+		go generate, or their fakes are generated twice.
+
+	packages
+		Packages, by import path or by path relative to the config file,
+		each with the interfaces in it to fake. A package in the module is
+		faked as if a directive in it named the interface, so o is relative
+		to the package. A package outside the module, such as one from the
+		standard library, needs an o, which is relative to the config file.
+
+	example:
+		# .counterfeiter.yaml at the root of the module
+		header: hack/header.txt
+		directives:
+		  - ./...
+		packages:
+		  ./internal/store:
+		    interfaces:
+		      Repository:
+		      Presenter:
+		        fake-name: PresenterDouble
+		  io:
+		    o: internal/fakes
+		    interfaces:
+		      WriteCloser:
+
+		# run from one go:generate line at the root of the module
+		//go:generate go tool counterfeiter
+
+		# or run directly, leaving existing go:generate lines alone
+		counterfeiter
 `

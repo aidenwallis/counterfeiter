@@ -299,6 +299,63 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("preloading targets with Preload()", func() {
+		ids := func(pkgs []*packages.Package) []string {
+			var result []string
+			for _, p := range pkgs {
+				result = append(result, p.ID)
+			}
+			return result
+		}
+
+		it("caches, for every target, the packages that loading it on its own would", func() {
+			fixtures, err := filepath.Abs(filepath.Join("..", "fixtures"))
+			g.Expect(err).NotTo(HaveOccurred())
+			targets := []string{
+				fixtures,
+				filepath.Join(fixtures, "externaltest"),
+				"io",
+				"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/genericinterface",
+				"github.com/maxbrunsfeld/counterfeiter/v6/fixtures/samepackage",
+			}
+			c := &Cache{}
+			g.Expect(Preload(c, "", targets...)).To(Succeed())
+			for _, target := range targets {
+				alone := &Fake{TargetPackage: target}
+				g.Expect(alone.loadPackages(&FakeCache{}, "")).To(Succeed())
+				preloaded, ok := c.Load(target)
+				g.Expect(ok).To(BeTrue(), target)
+				g.Expect(ids(preloaded)).To(Equal(ids(alone.Packages)), target)
+			}
+		})
+
+		it("generates the same fake from preloaded packages as from a fresh load", func() {
+			c := &Cache{}
+			g.Expect(Preload(c, "", "os", "io")).To(Succeed())
+			for _, target := range []string{"os", "io"} {
+				name := map[string]string{"os": "FileInfo", "io": "WriteCloser"}[target]
+				preloaded, err := NewFake(InterfaceOrFunction, name, target, "Fake"+name, target+"fakes", "", "", c)
+				g.Expect(err).NotTo(HaveOccurred())
+				fresh, err := NewFake(InterfaceOrFunction, name, target, "Fake"+name, target+"fakes", "", "", &FakeCache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				want, err := fresh.Generate(true)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(preloaded.Generate(true)).To(Equal(want))
+			}
+		})
+
+		it("leaves a target that did not load cleanly to be loaded, and reported, on its own", func() {
+			c := &Cache{}
+			g.Expect(Preload(c, "", "os", "nonexistentpackage")).To(Succeed())
+			_, ok := c.Load("os")
+			g.Expect(ok).To(BeTrue())
+			_, ok = c.Load("nonexistentpackage")
+			g.Expect(ok).To(BeFalse())
+			_, err := NewFake(InterfaceOrFunction, "NonExistent", "nonexistentpackage", "FakeNonExistent", "nonexistentpackagefakes", "", "", c)
+			g.Expect(err).To(HaveOccurred())
+		})
+	})
+
 	when("manually constructing a fake", func() {
 		it.Before(func() {
 			f = &Fake{Imports: newImports()}

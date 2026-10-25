@@ -77,7 +77,7 @@ If a package only has an interface or two, you can skip `-generate` and the `cou
 //go:generate go tool counterfeiter . MySpecialInterface
 ```
 
-`-generate` is much faster once there are several directives in a package, because it loads the package once and writes every fake from one process, where each `go:generate` line starts a new one.
+`-generate` is much faster once there are several directives in a package, because it loads the package once and writes every fake from one process, where each `go:generate` line starts a new one. In a module with fakes in many packages, [one config file for the whole module](#one-config-file-for-the-whole-module) is faster again.
 
 ### Step 3 - Run `go generate`
 
@@ -122,6 +122,56 @@ $ go generate ./...
 Writing `MyRepository` to `fake/my_repository.go`... Done
 Writing `MyPresenter` to `fake/my_presenter.go`... Done
 ```
+
+### One config file for the whole module
+
+`go generate ./...` runs counterfeiter once per package, and each run spends most of its time loading packages. In a module with fakes in many packages, describe them in a `.counterfeiter.yaml` instead and run counterfeiter once: it loads every package at once and generates the fakes in parallel. For 200 fakes across 40 packages that takes a third of a second rather than seven.
+
+```yaml
+# .counterfeiter.yaml, at the root of the module
+header: hack/header.txt
+
+# run the counterfeiter:generate directives already in these packages
+directives:
+  - ./...
+
+# and fake these interfaces, which need no directive
+packages:
+  ./internal/store:
+    interfaces:
+      Repository:
+      Presenter:
+        fake-name: PresenterDouble
+  io:
+    o: internal/fakes
+    interfaces:
+      WriteCloser:
+```
+
+Run with no arguments, counterfeiter uses the closest `.counterfeiter.yaml`, looking no further up than the module root.
+
+- `directives` takes package patterns, as `go list` does, and runs the `counterfeiter:generate` directives of every matching package just as `-generate` would, so the directives you already have keep working unchanged.
+- `packages` names packages by import path or by path relative to the config file, and the interfaces to fake in each. A package in the module is faked as if a directive in it named the interface, so its fakes go to `<package>fakes` beside it by default. A package outside the module, like `io` above, needs an `o`, relative to the config file.
+- `o`, `header`, `fake-name-template`, `test` and `q` mean what the flags of the same name mean. At the top level they apply to every fake, including those from `directives`; on a package or an interface they override what is above them. An interface can also set `fake-name`. `header` is relative to the config file.
+
+There are two ways to run it, depending on whether `go generate` should take the fast path.
+
+**From `go generate` (recommended).** Add one `go:generate` line that runs counterfeiter with no arguments:
+
+```go
+// in the module's root package, or any package below the config file
+//go:generate go tool counterfeiter
+```
+
+Then delete the `//go:generate go tool counterfeiter -generate` line from each package that `directives` covers, and keep their `counterfeiter:generate` directives. If those lines stay, `go generate ./...` generates the packages' fakes twice: once from the config, then again one package at a time.
+
+**Directly, leaving your `go:generate` lines alone.** Add the config without a `go:generate` line of its own, and run counterfeiter yourself, from a Makefile or CI, whenever you want every fake regenerated at once:
+
+```shell
+go tool counterfeiter
+```
+
+`go generate ./...` keeps working exactly as before, package by package, so nothing in your source has to change.
 
 ### Interfaces from other packages, the standard library or third-party modules
 
@@ -325,6 +375,10 @@ USAGE
 		[-fake-name-template <template>] [-header <header-file>] [-q] [-test]
 		[<source-path>] <interface> [-]
 
+	counterfeiter
+		With no arguments, generate the fakes described by the closest
+		.counterfeiter.yaml (see CONFIG FILE).
+
 ARGUMENTS
 	source-path
 		Path to the file or directory containing the interface to fake.
@@ -479,6 +533,56 @@ OPTIONS
 
 	-q
 		Suppress the "Writing ..." status lines. Errors are still reported.
+
+CONFIG FILE
+	Run without arguments, counterfeiter reads .counterfeiter.yaml (or
+	.counterfeiter.yml) from the current directory, or the closest
+	directory above it within the module, and generates every fake it
+	describes in one process. That is much faster than a -generate line
+	per package: every package is loaded at once and the fakes are
+	generated in parallel.
+
+	The options o, header, fake-name-template, test and q mean what the
+	flags of the same name mean. At the top level they apply to every
+	fake; on a package or an interface they override what is above them.
+	An interface can also set fake-name. header is relative to the config
+	file.
+
+	directives
+		Package patterns, as for go list, whose //counterfeiter:generate
+		directives are run as -generate would run them, with the top
+		level's options as defaults. Remove those packages' own
+		"go:generate ... -generate" lines if the config is run from
+		go generate, or their fakes are generated twice.
+
+	packages
+		Packages, by import path or by path relative to the config file,
+		each with the interfaces in it to fake. A package in the module is
+		faked as if a directive in it named the interface, so o is relative
+		to the package. A package outside the module, such as one from the
+		standard library, needs an o, which is relative to the config file.
+
+	example:
+		# .counterfeiter.yaml at the root of the module
+		header: hack/header.txt
+		directives:
+		  - ./...
+		packages:
+		  ./internal/store:
+		    interfaces:
+		      Repository:
+		      Presenter:
+		        fake-name: PresenterDouble
+		  io:
+		    o: internal/fakes
+		    interfaces:
+		      WriteCloser:
+
+		# run from one go:generate line at the root of the module
+		//go:generate go tool counterfeiter
+
+		# or run directly, leaving existing go:generate lines alone
+		counterfeiter
 ```
 
 ## Supported Versions Of `go`
