@@ -1,6 +1,6 @@
 package fixtures
 
-import the_aliased_package "github.com/aidenwallis/counterfeiter/v6/fixtures/aliased_package"
+import the_aliased_package "github.com/aidenwallis/counterfeiter/v7/fixtures/aliased_package"
 
 //counterfeiter:generate . SomethingWithForeignInterface
 

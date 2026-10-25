@@ -3,8 +3,8 @@ package seeded_test
 import (
 	"testing"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/seeded"
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/seeded/fakes"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/seeded"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/seeded/fakes"
 )
 
 func TestFakeJoinsTheSeededPackage(t *testing.T) {

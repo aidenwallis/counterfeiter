@@ -31,7 +31,7 @@ func testRegexp(t *testing.T, when spec.G, it spec.S) {
 				matches: false,
 			},
 			{
-				input:   "//go:generate go run github.com/aidenwallis/counterfeiter/v6 . Intf",
+				input:   "//go:generate go run github.com/aidenwallis/counterfeiter/v7 . Intf",
 				matches: false,
 			},
 			{

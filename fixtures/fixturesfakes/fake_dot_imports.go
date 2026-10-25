@@ -7,7 +7,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures"
 )
 
 type FakeDotImports struct {

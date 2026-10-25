@@ -14,9 +14,9 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/arguments"
-	"github.com/aidenwallis/counterfeiter/v6/command"
-	"github.com/aidenwallis/counterfeiter/v6/generator"
+	"github.com/aidenwallis/counterfeiter/v7/arguments"
+	"github.com/aidenwallis/counterfeiter/v7/command"
+	"github.com/aidenwallis/counterfeiter/v7/generator"
 )
 
 func main() {

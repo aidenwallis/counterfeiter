@@ -7,7 +7,7 @@ package configmodefakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/configmode"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/configmode"
 )
 
 type FakeWidget struct {

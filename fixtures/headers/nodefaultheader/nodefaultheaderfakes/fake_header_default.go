@@ -4,7 +4,7 @@ package nodefaultheaderfakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/headers/nodefaultheader"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/headers/nodefaultheader"
 )
 
 type FakeHeaderDefault struct {

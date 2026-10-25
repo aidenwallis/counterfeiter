@@ -1,6 +1,6 @@
 package generate_defaults
 
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -generate -o fakes -fake-name-template "The{{.TargetName}}Imposter"
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -generate -o fakes -fake-name-template "The{{.TargetName}}Imposter"
 
 //counterfeiter:generate . Sing
 type Sing interface {

@@ -5,9 +5,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures"
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/fixturesfakes"
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/genericinterface/genericinterfacefakes"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/fixturesfakes"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/genericinterface/genericinterfacefakes"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"

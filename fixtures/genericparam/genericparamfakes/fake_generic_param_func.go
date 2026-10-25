@@ -4,9 +4,9 @@ package genericparamfakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/genericparam"
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/genericparam/genericparamtype"
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/genericparam/genericreturntype"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/genericparam"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/genericparam/genericparamtype"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/genericparam/genericreturntype"
 )
 
 type FakeGenericParamFunc struct {

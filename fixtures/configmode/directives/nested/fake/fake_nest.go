@@ -7,7 +7,7 @@ package fake
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/configmode/directives/nested"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/configmode/directives/nested"
 )
 
 type FakeNest struct {

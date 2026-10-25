@@ -4,7 +4,7 @@ package flagcustomfakesdirfakes
 import (
 	"sync"
 
-	packagemodeshim "github.com/aidenwallis/counterfeiter/v6/fixtures/packagemode/flagcustomfakesdir"
+	packagemodeshim "github.com/aidenwallis/counterfeiter/v7/fixtures/packagemode/flagcustomfakesdir"
 )
 
 type FakePackagemode struct {

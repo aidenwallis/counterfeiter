@@ -1,4 +1,4 @@
-module github.com/aidenwallis/counterfeiter/v6
+module github.com/aidenwallis/counterfeiter/v7
 
 require (
 	github.com/google/go-cmp v0.7.0

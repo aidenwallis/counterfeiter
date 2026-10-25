@@ -4,7 +4,7 @@ package seeded_fakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/seeded"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/seeded"
 )
 
 type FakeSower struct {

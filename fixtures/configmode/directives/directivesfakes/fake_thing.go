@@ -7,7 +7,7 @@ package directivesfakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/configmode/directives"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/configmode/directives"
 )
 
 type FakeThing struct {

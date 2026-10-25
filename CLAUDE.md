@@ -4,7 +4,7 @@ This file provides guidance for working with code in this repository.
 
 ## What this is
 
-`counterfeiter` is a CLI (module `github.com/aidenwallis/counterfeiter/v6`) that generates Go test doubles ("fakes") for interfaces, function types, and whole packages. It is typically invoked via `//go:generate` directives. Requires Go modules; CI runs on `stable` and `oldstable` Go on Linux and Windows.
+`counterfeiter` is a CLI (module `github.com/aidenwallis/counterfeiter/v7`) that generates Go test doubles ("fakes") for interfaces, function types, and whole packages. It is typically invoked via `//go:generate` directives. Requires Go modules; CI runs on `stable` and `oldstable` Go on Linux and Windows.
 
 ## Commands
 
@@ -71,7 +71,7 @@ Key supporting pieces:
 
 ## Package layout
 
-Keep the existing layout: `main.go` at the module root and the three subpackages `arguments`, `command`, and `generator`. `main.go` must stay at the root because users invoke the tool by module path (`go run github.com/aidenwallis/counterfeiter/v6`, `go get -tool ...`); do not move it under `cmd/`. Do not restructure packages toward a different layout (for example Ben Johnson's Standard Package Layout, which the maintainer likes in general but has chosen not to apply here). Put new code in whichever of the three existing packages owns that pipeline stage.
+Keep the existing layout: `main.go` at the module root and the three subpackages `arguments`, `command`, and `generator`. `main.go` must stay at the root because users invoke the tool by module path (`go run github.com/aidenwallis/counterfeiter/v7`, `go get -tool ...`); do not move it under `cmd/`. Do not restructure packages toward a different layout (for example Ben Johnson's Standard Package Layout, which the maintainer likes in general but has chosen not to apply here). Put new code in whichever of the three existing packages owns that pipeline stage.
 
 ## Development workflow: red → green → refactor
 

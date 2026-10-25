@@ -1,12 +1,12 @@
-package type_aliases // import "github.com/aidenwallis/counterfeiter/v6/fixtures/type_aliases"
+package type_aliases // import "github.com/aidenwallis/counterfeiter/v7/fixtures/type_aliases"
 
 import (
 	"context"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/type_aliases/extra"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/type_aliases/extra"
 )
 
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -generate
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -generate
 
 //counterfeiter:generate . WithAliasedType
 type WithAliasedType interface {

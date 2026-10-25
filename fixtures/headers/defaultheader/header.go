@@ -1,6 +1,6 @@
-package defaultheader // import "github.com/aidenwallis/counterfeiter/v6/fixtures/headers/defaultheader"
+package defaultheader // import "github.com/aidenwallis/counterfeiter/v7/fixtures/headers/defaultheader"
 
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -header ../default.header.go.txt -generate
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -header ../default.header.go.txt -generate
 
 //counterfeiter:generate . HeaderDefault
 type HeaderDefault interface{}

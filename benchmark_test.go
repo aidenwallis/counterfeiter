@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aidenwallis/counterfeiter/v6/arguments"
-	"github.com/aidenwallis/counterfeiter/v6/generator"
+	"github.com/aidenwallis/counterfeiter/v7/arguments"
+	"github.com/aidenwallis/counterfeiter/v7/generator"
 )
 
 func BenchmarkDoGenerate(b *testing.B) {

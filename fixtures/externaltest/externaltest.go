@@ -5,10 +5,10 @@ package externaltest
 // package that declares the interface, whether that is this package, another
 // package in this module, the standard library, or a third-party module.
 
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -test . Thing
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -test ../samepackage Widget
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -test io.WriteCloser
-//go:generate go run github.com/aidenwallis/counterfeiter/v6 -test github.com/onsi/gomega/types.GomegaMatcher
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -test . Thing
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -test ../samepackage Widget
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -test io.WriteCloser
+//go:generate go run github.com/aidenwallis/counterfeiter/v7 -test github.com/onsi/gomega/types.GomegaMatcher
 
 type Thing interface {
 	Do(string) (int, error)

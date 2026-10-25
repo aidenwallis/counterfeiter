@@ -4,8 +4,8 @@ package fixturesfakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures"
-	hyphenpackage "github.com/aidenwallis/counterfeiter/v6/fixtures/go-hyphenpackage"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures"
+	hyphenpackage "github.com/aidenwallis/counterfeiter/v7/fixtures/go-hyphenpackage"
 )
 
 type FakeGenericImportedConstraint[T hyphenpackage.Hyphenated] struct {

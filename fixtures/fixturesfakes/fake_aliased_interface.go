@@ -4,8 +4,8 @@ package fixturesfakes
 import (
 	"sync"
 
-	"github.com/aidenwallis/counterfeiter/v6/fixtures"
-	"github.com/aidenwallis/counterfeiter/v6/fixtures/another_package"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures"
+	"github.com/aidenwallis/counterfeiter/v7/fixtures/another_package"
 )
 
 type FakeAliasedInterface struct {
