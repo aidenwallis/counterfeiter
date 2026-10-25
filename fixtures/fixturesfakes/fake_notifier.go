@@ -8,21 +8,20 @@ import (
 )
 
 type FakeNotifier struct {
-	Stub             func(string)
-	mutex            sync.RWMutex
-	argsForCall      []FakeNotifierArgs
+	Stub        func(string)
+	mutex       sync.RWMutex
+	argsForCall []struct {
+		arg1 string
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-// FakeNotifierArgs holds the arguments of one call to the fake.
-type FakeNotifierArgs struct {
-	Arg1 string
-}
-
 func (fake *FakeNotifier) Spy(arg1 string) {
 	fake.mutex.Lock()
-	fake.argsForCall = append(fake.argsForCall, FakeNotifierArgs{arg1})
+	fake.argsForCall = append(fake.argsForCall, struct {
+		arg1 string
+	}{arg1})
 	stub := fake.Stub
 	fake.recordInvocation("Notifier", []interface{}{arg1})
 	fake.mutex.Unlock()
@@ -46,15 +45,7 @@ func (fake *FakeNotifier) Calls(stub func(string)) {
 func (fake *FakeNotifier) ArgsForCall(i int) string {
 	fake.mutex.RLock()
 	defer fake.mutex.RUnlock()
-	return fake.argsForCall[i].Arg1
-}
-
-func (fake *FakeNotifier) Args() []FakeNotifierArgs {
-	fake.mutex.RLock()
-	defer fake.mutex.RUnlock()
-	args := make([]FakeNotifierArgs, len(fake.argsForCall))
-	copy(args, fake.argsForCall)
-	return args
+	return fake.argsForCall[i].arg1
 }
 
 func (fake *FakeNotifier) Invocations() map[string][][]interface{} {

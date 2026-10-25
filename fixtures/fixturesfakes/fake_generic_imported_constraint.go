@@ -11,11 +11,13 @@ import (
 type FakeGenericImportedConstraint[T hyphenpackage.Hyphenated] struct {
 	DoSomethingStub        func()
 	doSomethingMutex       sync.RWMutex
-	doSomethingArgsForCall []struct{}
-	ReturnTStub            func() T
-	returnTMutex           sync.RWMutex
-	returnTArgsForCall     []struct{}
-	returnTReturns         struct {
+	doSomethingArgsForCall []struct {
+	}
+	ReturnTStub        func() T
+	returnTMutex       sync.RWMutex
+	returnTArgsForCall []struct {
+	}
+	returnTReturns struct {
 		result1 T
 	}
 	returnTReturnsOnCall map[int]struct {
@@ -28,7 +30,8 @@ type FakeGenericImportedConstraint[T hyphenpackage.Hyphenated] struct {
 
 func (fake *FakeGenericImportedConstraint[T]) DoSomething() {
 	fake.doSomethingMutex.Lock()
-	fake.doSomethingArgsForCall = append(fake.doSomethingArgsForCall, struct{}{})
+	fake.doSomethingArgsForCall = append(fake.doSomethingArgsForCall, struct {
+	}{})
 	stub := fake.DoSomethingStub
 	fake.recordInvocation("DoSomething", []interface{}{})
 	fake.doSomethingMutex.Unlock()
@@ -52,7 +55,8 @@ func (fake *FakeGenericImportedConstraint[T]) DoSomethingCalls(stub func()) {
 func (fake *FakeGenericImportedConstraint[T]) ReturnT() T {
 	fake.returnTMutex.Lock()
 	ret, specificReturn := fake.returnTReturnsOnCall[len(fake.returnTArgsForCall)]
-	fake.returnTArgsForCall = append(fake.returnTArgsForCall, struct{}{})
+	fake.returnTArgsForCall = append(fake.returnTArgsForCall, struct {
+	}{})
 	stub := fake.ReturnTStub
 	fakeReturns := fake.returnTReturns
 	fake.recordInvocation("ReturnT", []interface{}{})

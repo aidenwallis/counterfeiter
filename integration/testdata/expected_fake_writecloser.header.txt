@@ -12,8 +12,9 @@ import (
 type FakeWriteCloser struct {
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
-	closeArgsForCall []struct{}
-	closeReturns     struct {
+	closeArgsForCall []struct {
+	}
+	closeReturns struct {
 		result1 error
 	}
 	closeReturnsOnCall map[int]struct {
@@ -21,8 +22,10 @@ type FakeWriteCloser struct {
 	}
 	WriteStub        func([]byte) (int, error)
 	writeMutex       sync.RWMutex
-	writeArgsForCall []FakeWriteCloserWriteArgs
-	writeReturns     struct {
+	writeArgsForCall []struct {
+		arg1 []byte
+	}
+	writeReturns struct {
 		result1 int
 		result2 error
 	}
@@ -35,15 +38,11 @@ type FakeWriteCloser struct {
 	invocationsMutex sync.RWMutex
 }
 
-// FakeWriteCloserWriteArgs holds the arguments of one call to Write.
-type FakeWriteCloserWriteArgs struct {
-	Arg1 []byte
-}
-
 func (fake *FakeWriteCloser) Close() error {
 	fake.closeMutex.Lock()
 	ret, specificReturn := fake.closeReturnsOnCall[len(fake.closeArgsForCall)]
-	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
+	fake.closeArgsForCall = append(fake.closeArgsForCall, struct {
+	}{})
 	stub := fake.CloseStub
 	fakeReturns := fake.closeReturns
 	fake.recordInvocation("Close", []interface{}{})
@@ -100,7 +99,9 @@ func (fake *FakeWriteCloser) Write(arg1 []byte) (int, error) {
 	}
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
-	fake.writeArgsForCall = append(fake.writeArgsForCall, FakeWriteCloserWriteArgs{arg1Copy})
+	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
+		arg1 []byte
+	}{arg1Copy})
 	stub := fake.WriteStub
 	fakeReturns := fake.writeReturns
 	fake.recordInvocation("Write", []interface{}{arg1Copy})
@@ -130,15 +131,7 @@ func (fake *FakeWriteCloser) WriteArgsForCall(i int) []byte {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.Arg1
-}
-
-func (fake *FakeWriteCloser) WriteArgs() []FakeWriteCloserWriteArgs {
-	fake.writeMutex.RLock()
-	defer fake.writeMutex.RUnlock()
-	args := make([]FakeWriteCloserWriteArgs, len(fake.writeArgsForCall))
-	copy(args, fake.writeArgsForCall)
-	return args
+	return argsForCall.arg1
 }
 
 func (fake *FakeWriteCloser) WriteReturns(result1 int, result2 error) {

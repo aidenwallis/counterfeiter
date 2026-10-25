@@ -15,8 +15,11 @@ import (
 type Gizmo struct {
 	OpenStub        func(context.Context, string) (io.ReadCloser, error)
 	openMutex       sync.RWMutex
-	openArgsForCall []GizmoOpenArgs
-	openReturns     struct {
+	openArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+	}
+	openReturns struct {
 		result1 io.ReadCloser
 		result2 error
 	}
@@ -29,16 +32,13 @@ type Gizmo struct {
 	invocationsMutex sync.RWMutex
 }
 
-// GizmoOpenArgs holds the arguments of one call to Open.
-type GizmoOpenArgs struct {
-	Arg1 context.Context
-	Arg2 string
-}
-
 func (fake *Gizmo) Open(arg1 context.Context, arg2 string) (io.ReadCloser, error) {
 	fake.openMutex.Lock()
 	ret, specificReturn := fake.openReturnsOnCall[len(fake.openArgsForCall)]
-	fake.openArgsForCall = append(fake.openArgsForCall, GizmoOpenArgs{arg1, arg2})
+	fake.openArgsForCall = append(fake.openArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.OpenStub
 	fakeReturns := fake.openReturns
 	fake.recordInvocation("Open", []interface{}{arg1, arg2})
@@ -68,15 +68,7 @@ func (fake *Gizmo) OpenArgsForCall(i int) (context.Context, string) {
 	fake.openMutex.RLock()
 	defer fake.openMutex.RUnlock()
 	argsForCall := fake.openArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
-}
-
-func (fake *Gizmo) OpenArgs() []GizmoOpenArgs {
-	fake.openMutex.RLock()
-	defer fake.openMutex.RUnlock()
-	args := make([]GizmoOpenArgs, len(fake.openArgsForCall))
-	copy(args, fake.openArgsForCall)
-	return args
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *Gizmo) OpenReturns(result1 io.ReadCloser, result2 error) {

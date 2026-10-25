@@ -19,8 +19,17 @@ type FakeInlineStructParams struct {
 		HTTPRequest       http.Request
 	}) error
 	doSomethingMutex       sync.RWMutex
-	doSomethingArgsForCall []FakeInlineStructParamsDoSomethingArgs
-	doSomethingReturns     struct {
+	doSomethingArgsForCall []struct {
+		arg1 context.Context
+		arg2 struct {
+			SomeString        string
+			SomeStringPointer *string
+			SomeTime          time.Time
+			SomeTimePointer   *time.Time
+			HTTPRequest       http.Request
+		}
+	}
+	doSomethingReturns struct {
 		result1 error
 	}
 	doSomethingReturnsOnCall map[int]struct {
@@ -29,18 +38,6 @@ type FakeInlineStructParams struct {
 	invocations      map[string][][]interface{}
 	callOrder        []string
 	invocationsMutex sync.RWMutex
-}
-
-// FakeInlineStructParamsDoSomethingArgs holds the arguments of one call to DoSomething.
-type FakeInlineStructParamsDoSomethingArgs struct {
-	Arg1 context.Context
-	Arg2 struct {
-		SomeString        string
-		SomeStringPointer *string
-		SomeTime          time.Time
-		SomeTimePointer   *time.Time
-		HTTPRequest       http.Request
-	}
 }
 
 func (fake *FakeInlineStructParams) DoSomething(arg1 context.Context, arg2 struct {
@@ -52,7 +49,16 @@ func (fake *FakeInlineStructParams) DoSomething(arg1 context.Context, arg2 struc
 }) error {
 	fake.doSomethingMutex.Lock()
 	ret, specificReturn := fake.doSomethingReturnsOnCall[len(fake.doSomethingArgsForCall)]
-	fake.doSomethingArgsForCall = append(fake.doSomethingArgsForCall, FakeInlineStructParamsDoSomethingArgs{arg1, arg2})
+	fake.doSomethingArgsForCall = append(fake.doSomethingArgsForCall, struct {
+		arg1 context.Context
+		arg2 struct {
+			SomeString        string
+			SomeStringPointer *string
+			SomeTime          time.Time
+			SomeTimePointer   *time.Time
+			HTTPRequest       http.Request
+		}
+	}{arg1, arg2})
 	stub := fake.DoSomethingStub
 	fakeReturns := fake.doSomethingReturns
 	fake.recordInvocation("DoSomething", []interface{}{arg1, arg2})
@@ -94,15 +100,7 @@ func (fake *FakeInlineStructParams) DoSomethingArgsForCall(i int) (context.Conte
 	fake.doSomethingMutex.RLock()
 	defer fake.doSomethingMutex.RUnlock()
 	argsForCall := fake.doSomethingArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
-}
-
-func (fake *FakeInlineStructParams) DoSomethingArgs() []FakeInlineStructParamsDoSomethingArgs {
-	fake.doSomethingMutex.RLock()
-	defer fake.doSomethingMutex.RUnlock()
-	args := make([]FakeInlineStructParamsDoSomethingArgs, len(fake.doSomethingArgsForCall))
-	copy(args, fake.doSomethingArgsForCall)
-	return args
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeInlineStructParams) DoSomethingReturns(result1 error) {

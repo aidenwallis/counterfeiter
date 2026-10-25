@@ -10,8 +10,10 @@ import (
 type FakeHasOtherTypes struct {
 	GetThingStub        func(fixtures.SomeString) fixtures.SomeFunc
 	getThingMutex       sync.RWMutex
-	getThingArgsForCall []FakeHasOtherTypesGetThingArgs
-	getThingReturns     struct {
+	getThingArgsForCall []struct {
+		arg1 fixtures.SomeString
+	}
+	getThingReturns struct {
 		result1 fixtures.SomeFunc
 	}
 	getThingReturnsOnCall map[int]struct {
@@ -22,15 +24,12 @@ type FakeHasOtherTypes struct {
 	invocationsMutex sync.RWMutex
 }
 
-// FakeHasOtherTypesGetThingArgs holds the arguments of one call to GetThing.
-type FakeHasOtherTypesGetThingArgs struct {
-	Arg1 fixtures.SomeString
-}
-
 func (fake *FakeHasOtherTypes) GetThing(arg1 fixtures.SomeString) fixtures.SomeFunc {
 	fake.getThingMutex.Lock()
 	ret, specificReturn := fake.getThingReturnsOnCall[len(fake.getThingArgsForCall)]
-	fake.getThingArgsForCall = append(fake.getThingArgsForCall, FakeHasOtherTypesGetThingArgs{arg1})
+	fake.getThingArgsForCall = append(fake.getThingArgsForCall, struct {
+		arg1 fixtures.SomeString
+	}{arg1})
 	stub := fake.GetThingStub
 	fakeReturns := fake.getThingReturns
 	fake.recordInvocation("GetThing", []interface{}{arg1})
@@ -60,15 +59,7 @@ func (fake *FakeHasOtherTypes) GetThingArgsForCall(i int) fixtures.SomeString {
 	fake.getThingMutex.RLock()
 	defer fake.getThingMutex.RUnlock()
 	argsForCall := fake.getThingArgsForCall[i]
-	return argsForCall.Arg1
-}
-
-func (fake *FakeHasOtherTypes) GetThingArgs() []FakeHasOtherTypesGetThingArgs {
-	fake.getThingMutex.RLock()
-	defer fake.getThingMutex.RUnlock()
-	args := make([]FakeHasOtherTypesGetThingArgs, len(fake.getThingArgsForCall))
-	copy(args, fake.getThingArgsForCall)
-	return args
+	return argsForCall.arg1
 }
 
 func (fake *FakeHasOtherTypes) GetThingReturns(result1 fixtures.SomeFunc) {

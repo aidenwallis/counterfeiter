@@ -10,8 +10,10 @@ import (
 type FakeInAliasedPackage struct {
 	StuffStub        func(int) string
 	stuffMutex       sync.RWMutex
-	stuffArgsForCall []FakeInAliasedPackageStuffArgs
-	stuffReturns     struct {
+	stuffArgsForCall []struct {
+		arg1 int
+	}
+	stuffReturns struct {
 		result1 string
 	}
 	stuffReturnsOnCall map[int]struct {
@@ -22,15 +24,12 @@ type FakeInAliasedPackage struct {
 	invocationsMutex sync.RWMutex
 }
 
-// FakeInAliasedPackageStuffArgs holds the arguments of one call to Stuff.
-type FakeInAliasedPackageStuffArgs struct {
-	Arg1 int
-}
-
 func (fake *FakeInAliasedPackage) Stuff(arg1 int) string {
 	fake.stuffMutex.Lock()
 	ret, specificReturn := fake.stuffReturnsOnCall[len(fake.stuffArgsForCall)]
-	fake.stuffArgsForCall = append(fake.stuffArgsForCall, FakeInAliasedPackageStuffArgs{arg1})
+	fake.stuffArgsForCall = append(fake.stuffArgsForCall, struct {
+		arg1 int
+	}{arg1})
 	stub := fake.StuffStub
 	fakeReturns := fake.stuffReturns
 	fake.recordInvocation("Stuff", []interface{}{arg1})
@@ -60,15 +59,7 @@ func (fake *FakeInAliasedPackage) StuffArgsForCall(i int) int {
 	fake.stuffMutex.RLock()
 	defer fake.stuffMutex.RUnlock()
 	argsForCall := fake.stuffArgsForCall[i]
-	return argsForCall.Arg1
-}
-
-func (fake *FakeInAliasedPackage) StuffArgs() []FakeInAliasedPackageStuffArgs {
-	fake.stuffMutex.RLock()
-	defer fake.stuffMutex.RUnlock()
-	args := make([]FakeInAliasedPackageStuffArgs, len(fake.stuffArgsForCall))
-	copy(args, fake.stuffArgsForCall)
-	return args
+	return argsForCall.arg1
 }
 
 func (fake *FakeInAliasedPackage) StuffReturns(result1 string) {

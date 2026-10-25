@@ -13,8 +13,10 @@ import (
 type FakeWidget struct {
 	SpinStub        func(int) error
 	spinMutex       sync.RWMutex
-	spinArgsForCall []FakeWidgetSpinArgs
-	spinReturns     struct {
+	spinArgsForCall []struct {
+		arg1 int
+	}
+	spinReturns struct {
 		result1 error
 	}
 	spinReturnsOnCall map[int]struct {
@@ -25,15 +27,12 @@ type FakeWidget struct {
 	invocationsMutex sync.RWMutex
 }
 
-// FakeWidgetSpinArgs holds the arguments of one call to Spin.
-type FakeWidgetSpinArgs struct {
-	Arg1 int
-}
-
 func (fake *FakeWidget) Spin(arg1 int) error {
 	fake.spinMutex.Lock()
 	ret, specificReturn := fake.spinReturnsOnCall[len(fake.spinArgsForCall)]
-	fake.spinArgsForCall = append(fake.spinArgsForCall, FakeWidgetSpinArgs{arg1})
+	fake.spinArgsForCall = append(fake.spinArgsForCall, struct {
+		arg1 int
+	}{arg1})
 	stub := fake.SpinStub
 	fakeReturns := fake.spinReturns
 	fake.recordInvocation("Spin", []interface{}{arg1})
@@ -63,15 +62,7 @@ func (fake *FakeWidget) SpinArgsForCall(i int) int {
 	fake.spinMutex.RLock()
 	defer fake.spinMutex.RUnlock()
 	argsForCall := fake.spinArgsForCall[i]
-	return argsForCall.Arg1
-}
-
-func (fake *FakeWidget) SpinArgs() []FakeWidgetSpinArgs {
-	fake.spinMutex.RLock()
-	defer fake.spinMutex.RUnlock()
-	args := make([]FakeWidgetSpinArgs, len(fake.spinArgsForCall))
-	copy(args, fake.spinArgsForCall)
-	return args
+	return argsForCall.arg1
 }
 
 func (fake *FakeWidget) SpinReturns(result1 error) {

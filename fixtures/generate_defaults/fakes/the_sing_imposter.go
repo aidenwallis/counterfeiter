@@ -10,8 +10,9 @@ import (
 type TheSingImposter struct {
 	SingStub        func() string
 	singMutex       sync.RWMutex
-	singArgsForCall []struct{}
-	singReturns     struct {
+	singArgsForCall []struct {
+	}
+	singReturns struct {
 		result1 string
 	}
 	singReturnsOnCall map[int]struct {
@@ -25,7 +26,8 @@ type TheSingImposter struct {
 func (fake *TheSingImposter) Sing() string {
 	fake.singMutex.Lock()
 	ret, specificReturn := fake.singReturnsOnCall[len(fake.singArgsForCall)]
-	fake.singArgsForCall = append(fake.singArgsForCall, struct{}{})
+	fake.singArgsForCall = append(fake.singArgsForCall, struct {
+	}{})
 	stub := fake.SingStub
 	fakeReturns := fake.singReturns
 	fake.recordInvocation("Sing", []interface{}{})

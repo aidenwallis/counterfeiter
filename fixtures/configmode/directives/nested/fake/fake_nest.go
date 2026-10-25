@@ -13,15 +13,12 @@ import (
 type FakeNest struct {
 	HatchStub        func(...string)
 	hatchMutex       sync.RWMutex
-	hatchArgsForCall []FakeNestHatchArgs
+	hatchArgsForCall []struct {
+		arg1 []string
+	}
 	invocations      map[string][][]interface{}
 	callOrder        []string
 	invocationsMutex sync.RWMutex
-}
-
-// FakeNestHatchArgs holds the arguments of one call to Hatch.
-type FakeNestHatchArgs struct {
-	Arg1 []string
 }
 
 func (fake *FakeNest) Hatch(arg1 ...string) {
@@ -31,7 +28,9 @@ func (fake *FakeNest) Hatch(arg1 ...string) {
 		copy(arg1Copy, arg1)
 	}
 	fake.hatchMutex.Lock()
-	fake.hatchArgsForCall = append(fake.hatchArgsForCall, FakeNestHatchArgs{arg1Copy})
+	fake.hatchArgsForCall = append(fake.hatchArgsForCall, struct {
+		arg1 []string
+	}{arg1Copy})
 	stub := fake.HatchStub
 	fake.recordInvocation("Hatch", []interface{}{arg1Copy})
 	fake.hatchMutex.Unlock()
@@ -56,15 +55,7 @@ func (fake *FakeNest) HatchArgsForCall(i int) []string {
 	fake.hatchMutex.RLock()
 	defer fake.hatchMutex.RUnlock()
 	argsForCall := fake.hatchArgsForCall[i]
-	return argsForCall.Arg1
-}
-
-func (fake *FakeNest) HatchArgs() []FakeNestHatchArgs {
-	fake.hatchMutex.RLock()
-	defer fake.hatchMutex.RUnlock()
-	args := make([]FakeNestHatchArgs, len(fake.hatchArgsForCall))
-	copy(args, fake.hatchArgsForCall)
-	return args
+	return argsForCall.arg1
 }
 
 func (fake *FakeNest) Invocations() map[string][][]interface{} {
