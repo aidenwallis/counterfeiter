@@ -1,0 +1,15 @@
+header: ../headers/default.header.go.txt
+
+directives:
+  - ./directives/...
+
+packages:
+  .:
+    interfaces:
+      Widget:
+      Gadget:
+        fake-name: Gizmo
+  io:
+    o: iofakes
+    interfaces:
+      WriteCloser:

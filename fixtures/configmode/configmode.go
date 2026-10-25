@@ -1,0 +1,16 @@
+package configmode
+
+import (
+	"context"
+	"io"
+)
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6
+
+type Widget interface {
+	Spin(speed int) error
+}
+
+type Gadget interface {
+	Open(ctx context.Context, name string) (io.ReadCloser, error)
+}

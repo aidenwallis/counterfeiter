@@ -14,6 +14,11 @@ func Detect(cwd string, args []string, generateMode bool) ([]Invocation, error) 
 	if generateMode {
 		return generateModeInvocations(cwd)
 	}
+	if len(args) == 1 {
+		if file, moduleDir := findConfig(cwd); file != "" {
+			return configInvocations(file, moduleDir)
+		}
+	}
 
 	file := os.Getenv("GOFILE")
 	var lineno int
