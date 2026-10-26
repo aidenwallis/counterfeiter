@@ -14,9 +14,37 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// loadPackages loads the target package. Its test variants, which have the
+// package type-checked again, are loaded only when the package itself does
+// not declare the target, which may then be declared in a _test.go file.
 func (f *Fake) loadPackages(c Cacher, workingDir string) error {
+	err := f.loadPackagesWith(c, workingDir, false)
+	if err != nil || f.Mode == Package || declares(f.Packages, f.TargetName) {
+		return err
+	}
+	f.loadErrors = nil
+	return f.loadPackagesWith(c, workingDir, true)
+}
+
+func declares(pkgs []*packages.Package, name string) bool {
+	for _, p := range pkgs {
+		if p.Types == nil {
+			continue
+		}
+		if _, ok := p.Types.Scope().Lookup(name).(*types.TypeName); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *Fake) loadPackagesWith(c Cacher, workingDir string, tests bool) error {
 	log.Println("loading packages...")
-	p, ok := c.Load(f.TargetPackage)
+	key := f.TargetPackage
+	if tests {
+		key += " [tests]"
+	}
+	p, ok := c.Load(key)
 	if ok {
 		f.Packages = p
 		log.Printf("loaded %v packages from cache\n", len(f.Packages))
@@ -31,7 +59,7 @@ func (f *Fake) loadPackages(c Cacher, workingDir string) error {
 		}
 		importPath = bp.ImportPath
 	}
-	p, err := packages.Load(loadConfig(workingDir), importPath)
+	p, err := packages.Load(loadConfig(workingDir, tests), importPath)
 	if err != nil {
 		return err
 	}
@@ -69,16 +97,16 @@ func (f *Fake) loadPackages(c Cacher, workingDir string) error {
 		return err
 	}
 	f.Packages = p
-	c.Store(f.TargetPackage, p)
+	c.Store(key, p)
 	log.Printf("loaded %v packages\n", len(f.Packages))
 	return nil
 }
 
-func loadConfig(workingDir string) *packages.Config {
+func loadConfig(workingDir string, tests bool) *packages.Config {
 	return &packages.Config{
 		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax,
 		Dir:   workingDir,
-		Tests: true,
+		Tests: tests,
 	}
 }
 
@@ -92,7 +120,7 @@ func Preload(c Cacher, workingDir string, targets ...string) error {
 	if len(targets) == 0 {
 		return nil
 	}
-	pkgs, err := packages.Load(loadConfig(workingDir), targets...)
+	pkgs, err := packages.Load(loadConfig(workingDir, false), targets...)
 	if err != nil {
 		return err
 	}
@@ -100,43 +128,28 @@ func Preload(c Cacher, workingDir string, targets ...string) error {
 		if _, ok := c.Load(target); ok {
 			continue
 		}
-		if group := preloadedGroup(pkgs, target); group != nil {
-			c.Store(target, group)
+		if p := preloaded(pkgs, target); p != nil {
+			c.Store(target, []*packages.Package{p})
 		}
 	}
 	return nil
 }
 
-// preloadedGroup returns the packages that loading target on its own would
-// have returned: the package itself followed by its test variants, or nil if
-// the package is missing or has errors.
-func preloadedGroup(pkgs []*packages.Package, target string) []*packages.Package {
-	var root *packages.Package
+// preloaded returns the package that loading target on its own would have
+// returned, or nil if the package is missing or has errors.
+func preloaded(pkgs []*packages.Package, target string) *packages.Package {
 	for _, p := range pkgs {
-		if p.ID != p.PkgPath {
-			continue // a test variant
+		if p.PkgPath != target && !(filepath.IsAbs(target) && sameDir(packageDir(p), target)) {
+			continue
 		}
-		if p.PkgPath == target || (filepath.IsAbs(target) && sameDir(packageDir(p), target)) {
-			root = p
-			break
+		for _, e := range p.Errors {
+			if !isBuildTranscript(e) {
+				return nil
+			}
 		}
+		return p
 	}
-	if root == nil {
-		return nil
-	}
-	for _, e := range root.Errors {
-		if !isBuildTranscript(e) {
-			return nil
-		}
-	}
-	testMain := root.PkgPath + ".test"
-	var group []*packages.Package
-	for _, p := range pkgs {
-		if p == root || p.ID == testMain || strings.HasSuffix(p.ID, " ["+testMain+"]") {
-			group = append(group, p)
-		}
-	}
-	return group
+	return nil
 }
 
 func (f *Fake) findPackage() error {

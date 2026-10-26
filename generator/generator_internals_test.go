@@ -140,6 +140,20 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
+		when("the target package has tests", func() {
+			it("loads the package alone, without the test variants that would type-check it again", func() {
+				f, err = NewFake(InterfaceOrFunction, "Sower", "github.com/aidenwallis/counterfeiter/v7/fixtures/seeded", "FakeSower", "fakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.Packages).To(HaveLen(1))
+			})
+
+			it("still finds a target declared in a _test.go file", func() {
+				f, err = NewFake(InterfaceOrFunction, "DeclaredInTest", "github.com/aidenwallis/counterfeiter/v7/fixtures/testonly", "FakeDeclaredInTest", "testonlyfakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.IsInterface()).To(BeTrue())
+			})
+		})
+
 		when("the destination directory already holds a package", func() {
 			it("joins that package rather than naming one after the directory", func() {
 				dir, err := filepath.Abs(filepath.Join("..", "fixtures", "seeded", "fakes"))
@@ -347,7 +361,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			c := &Cache{}
 			g.Expect(Preload(c, "", targets...)).To(Succeed())
 			for _, target := range targets {
-				alone := &Fake{TargetPackage: target}
+				alone := &Fake{TargetPackage: target, Mode: Package}
 				g.Expect(alone.loadPackages(&FakeCache{}, "")).To(Succeed())
 				preloaded, ok := c.Load(target)
 				g.Expect(ok).To(BeTrue(), target)
