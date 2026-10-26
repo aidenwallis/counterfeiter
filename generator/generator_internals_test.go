@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"go/format"
 	"go/types"
 	"io"
 	"log"
@@ -374,6 +375,26 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 		it("gives up outside a module", func() {
 			_, ok := importPathForDir(t.TempDir())
 			g.Expect(ok).To(BeFalse())
+		})
+	})
+
+	when("generating a fake with goimports", func() {
+		it("returns gofmt-formatted source, so it needs no further formatting", func() {
+			for _, target := range []struct {
+				mode FakeMode
+				name string
+				pkg  string
+			}{
+				{InterfaceOrFunction, "Something", "github.com/aidenwallis/counterfeiter/v7/fixtures"},
+				{InterfaceOrFunction, "RequestFactory", "github.com/aidenwallis/counterfeiter/v7/fixtures"},
+				{Package, "", "github.com/aidenwallis/counterfeiter/v7/fixtures/packagemode"},
+			} {
+				f, err := NewFake(target.mode, target.name, target.pkg, "Fake", "fakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				b, err := f.Generate(true)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(format.Source(b)).To(Equal(b), target.name)
+			}
 		})
 	})
 
