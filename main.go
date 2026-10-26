@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"go/format"
 	"io"
 	"log"
 	"os"
@@ -154,9 +153,6 @@ func build(workingDir string, args *arguments.ParsedArguments, cache generator.C
 		return fake{err: err}
 	}
 	b, err := f.Generate(true)
-	if err == nil {
-		b, err = format.Source(b)
-	}
 	return fake{name: f.Name, code: b, err: err}
 }
 
