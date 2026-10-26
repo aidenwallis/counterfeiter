@@ -4,6 +4,7 @@ import (
 	"go/types"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -111,6 +112,29 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 				g.Expect(f.Imports.ByPkgPath).To(HaveKey("github.com/aidenwallis/counterfeiter/v7/fixtures/go-hyphenpackage"))
 				g.Expect(f.GenericTypeParametersAndConstraints).To(Equal("[T hyphenpackage.Hyphenated]"))
 				g.Expect(f.GenericTypeParameters).To(Equal("[T]"))
+			})
+		})
+
+		when("the target package has tests", func() {
+			it("loads the package alone, without the test variants that would type-check it again", func() {
+				f, err = NewFake(InterfaceOrFunction, "Sower", "github.com/aidenwallis/counterfeiter/v7/fixtures/seeded", "FakeSower", "fakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.Packages).To(HaveLen(1))
+			})
+
+			it("loads a package whose tests declare the target once, together with its tests", func() {
+				dir, err := filepath.Abs(filepath.Join("..", "fixtures", "testonly"))
+				g.Expect(err).NotTo(HaveOccurred())
+				c := &storeRecorder{}
+				f, err = NewFake(InterfaceOrFunction, "DeclaredInTest", dir, "FakeDeclaredInTest", "testonlyfakes", "", "", c)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(c.stored).To(HaveLen(1))
+			})
+
+			it("still finds a target declared in a _test.go file", func() {
+				f, err = NewFake(InterfaceOrFunction, "DeclaredInTest", "github.com/aidenwallis/counterfeiter/v7/fixtures/testonly", "FakeDeclaredInTest", "testonlyfakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.IsInterface()).To(BeTrue())
 			})
 		})
 
@@ -299,6 +323,38 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("checking whether a package's tests may declare a target", func() {
+		it("is true when a _test.go file declares a type that is not a struct", func() {
+			dir, err := filepath.Abs(filepath.Join("..", "fixtures", "testonly"))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(testsMayDeclareTarget(dir)).To(BeTrue())
+		})
+
+		it("is false when the _test.go files declare only structs", func() {
+			dir, err := filepath.Abs(filepath.Join("..", "fixtures", "externaltest"))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(testsMayDeclareTarget(dir)).To(BeFalse())
+		})
+
+		it("is false when the _test.go files declare no types", func() {
+			dir, err := filepath.Abs(filepath.Join("..", "fixtures", "seeded"))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(testsMayDeclareTarget(dir)).To(BeFalse())
+		})
+
+		it("is true for a group of type declarations, which it does not look into", func() {
+			dir := t.TempDir()
+			g.Expect(os.WriteFile(filepath.Join(dir, "a_test.go"), []byte("package a\n\ntype (\n\tx struct{}\n)\n"), 0o644)).To(Succeed())
+			g.Expect(testsMayDeclareTarget(dir)).To(BeTrue())
+		})
+
+		it("is false for a generic struct", func() {
+			dir := t.TempDir()
+			g.Expect(os.WriteFile(filepath.Join(dir, "a_test.go"), []byte("package a\n\ntype x[T any] struct{ t T }\n"), 0o644)).To(Succeed())
+			g.Expect(testsMayDeclareTarget(dir)).To(BeFalse())
+		})
+	})
+
 	when("preloading targets with Preload()", func() {
 		ids := func(pkgs []*packages.Package) []string {
 			var result []string
@@ -321,7 +377,7 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			c := &Cache{}
 			g.Expect(Preload(c, "", targets...)).To(Succeed())
 			for _, target := range targets {
-				alone := &Fake{TargetPackage: target}
+				alone := &Fake{TargetPackage: target, Mode: Package}
 				g.Expect(alone.loadPackages(&FakeCache{}, "")).To(Succeed())
 				preloaded, ok := c.Load(target)
 				g.Expect(ok).To(BeTrue(), target)
@@ -342,6 +398,17 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(preloaded.Generate(true)).To(Equal(want))
 			}
+		})
+
+		it("serves a target declared in a _test.go file without loading it again", func() {
+			dir, err := filepath.Abs(filepath.Join("..", "fixtures", "testonly"))
+			g.Expect(err).NotTo(HaveOccurred())
+			c := &storeRecorder{}
+			g.Expect(Preload(c, "", dir)).To(Succeed())
+			preloaded := len(c.stored)
+			_, err = NewFake(InterfaceOrFunction, "DeclaredInTest", dir, "FakeDeclaredInTest", "testonlyfakes", "", "", c)
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(c.stored).To(HaveLen(preloaded))
 		})
 
 		it("leaves a target that did not load cleanly to be loaded, and reported, on its own", func() {
@@ -610,4 +677,16 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 	})
+}
+
+// storeRecorder is a Cache that records what is stored in it, which is every
+// package load that missed the cache.
+type storeRecorder struct {
+	Cache
+	stored []string
+}
+
+func (s *storeRecorder) Store(packagePath string, pkgs []*packages.Package) {
+	s.stored = append(s.stored, packagePath)
+	s.Cache.Store(packagePath, pkgs)
 }
