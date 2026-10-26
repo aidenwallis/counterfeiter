@@ -339,6 +339,44 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("working out the import path of a directory", func() {
+		var fixtures string
+		it.Before(func() {
+			fixtures, err = filepath.Abs(filepath.Join("..", "fixtures"))
+			g.Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("joins the module path and the directory's path within the module", func() {
+			path, ok := importPathForDir(filepath.Join(fixtures, "go-hyphenpackage"))
+			g.Expect(ok).To(BeTrue())
+			g.Expect(path).To(Equal("github.com/aidenwallis/counterfeiter/v7/fixtures/go-hyphenpackage"))
+		})
+
+		it("uses the module path for the module's root", func() {
+			path, ok := importPathForDir(filepath.Dir(fixtures))
+			g.Expect(ok).To(BeTrue())
+			g.Expect(path).To(Equal("github.com/aidenwallis/counterfeiter/v7"))
+		})
+
+		it("uses the innermost module", func() {
+			path, ok := importPathForDir(filepath.Join(fixtures, "dup_packages", "a"))
+			g.Expect(ok).To(BeTrue())
+			g.Expect(path).To(Equal("github.com/aidenwallis/counterfeiter/v7/fixtures/dup_packages/a"))
+		})
+
+		it("gives up on a directory the go command does not import by its path in the module", func() {
+			for _, dir := range []string{"vendor", "testdata", "_hidden", ".hidden"} {
+				_, ok := importPathForDir(filepath.Join(fixtures, dir, "pkg"))
+				g.Expect(ok).To(BeFalse(), dir)
+			}
+		})
+
+		it("gives up outside a module", func() {
+			_, ok := importPathForDir(t.TempDir())
+			g.Expect(ok).To(BeFalse())
+		})
+	})
+
 	when("preloading targets with Preload()", func() {
 		ids := func(pkgs []*packages.Package) []string {
 			var result []string
