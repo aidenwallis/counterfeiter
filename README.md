@@ -107,6 +107,12 @@ Writing `FakePresenter` to `api/apifakes/fake_presenter.go`... Done
 
 Every fake goes next to the package that declares its interface. Run `go generate ./...` again whenever an interface changes.
 
+In a large module, turning off the garbage collector makes generating hundreds of fakes noticeably faster, in exchange for more memory while it runs:
+
+```shell
+$ GOGC=off go generate ./...
+```
+
 ## Defaults
 
 `MySpecialInterface` above is declared in package `foo`, so `//counterfeiter:generate . MySpecialInterface` produces:

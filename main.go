@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/debug"
 	"runtime/pprof"
 	"slices"
 	"sync"
@@ -19,8 +18,6 @@ import (
 )
 
 func main() {
-	debug.SetGCPercent(-1)
-
 	if err := run(); err != nil {
 		fail("%v", err)
 	}
