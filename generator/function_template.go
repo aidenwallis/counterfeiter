@@ -150,7 +150,7 @@ func (fake *{{.Name}}) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-{{if or (IsExported .TargetName) (not .TargetAlias) -}}
+{{if .AssertsTarget -}}
 var _ {{if .TargetAlias}}{{.TargetAlias}}.{{end}}{{.TargetName}} = new({{.Name}}).Spy
 {{- end}}
 `

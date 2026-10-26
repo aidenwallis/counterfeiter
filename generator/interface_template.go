@@ -178,7 +178,7 @@ func (fake *{{.Name}}{{$.GenericTypeParameters}}) recordInvocation(key string, a
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-{{if or (IsExported .TargetName) (not .TargetAlias) -}}
+{{if .AssertsTarget -}}
 {{if .GenericTypeParameters -}}
 func _{{.GenericTypeParametersAndConstraints}}() {
 	var _ {{if .TargetAlias}}{{.TargetAlias}}.{{end}}{{.TargetName}}{{.GenericTypeParameters}} = new({{.Name}}{{.GenericTypeParameters}})

@@ -114,6 +114,38 @@ func testGenerator(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
+		when("the target uses a package whose name is the major version at the end of its path", func() {
+			it("names that import itself, so goimports does not have to look the package up", func() {
+				f, err = NewFake(InterfaceOrFunction, "ImportsVersionedPackage", "github.com/aidenwallis/counterfeiter/v7/fixtures", "FakeImportsVersionedPackage", "fixturesfakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				b, err := f.Generate(false)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(string(b)).To(ContainSubstring(`v1 "github.com/aidenwallis/counterfeiter/v7/fixtures/versioned/v1"`))
+			})
+		})
+
+		when("the target is an unexported interface faked outside its package", func() {
+			it("does not import that package, which the fake cannot name", func() {
+				f, err = NewFake(InterfaceOrFunction, "unexportedInterface", "github.com/aidenwallis/counterfeiter/v7/fixtures", "FakeUnexportedInterface", "fixturesfakes", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.Imports.ByPkgPath).NotTo(HaveKey("github.com/aidenwallis/counterfeiter/v7/fixtures"))
+			})
+		})
+
+		when("the target is a package", func() {
+			it("does not import sync, which a shim does not use", func() {
+				f, err = NewFake(Package, "", "github.com/aidenwallis/counterfeiter/v7/fixtures/packagemode", "Packagemode", "packagemodeshim", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.Imports.ByPkgPath).NotTo(HaveKey("sync"))
+			})
+
+			it("does not import a package without exported functions, which the shim never calls", func() {
+				f, err = NewFake(Package, "", "embed", "Embed", "embedshim", "", "", &Cache{})
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(f.Imports.ByPkgPath).NotTo(HaveKey("embed"))
+			})
+		})
+
 		when("the destination directory already holds a package", func() {
 			it("joins that package rather than naming one after the directory", func() {
 				dir, err := filepath.Abs(filepath.Join("..", "fixtures", "seeded", "fakes"))

@@ -183,7 +183,15 @@ func (f *Fake) findPackage() error {
 		f.DestinationPackage = strings.TrimSuffix(f.DestinationPackage, "_test") + "_test"
 	}
 	f.inTargetPackage = inDir && f.DestinationPackage == pkg.Name
-	if !f.inTargetPackage {
+	// The target's package is imported only to name the target or, in a
+	// package shim, to call the package's functions. A fake of an
+	// unexported target outside its package cannot name the target, and
+	// gets the import only if a signature needs it.
+	uses := len(packageMethodSet(pkg)) > 0
+	if f.Mode != Package {
+		uses = isExported(target.Name())
+	}
+	if !f.inTargetPackage && uses {
 		t := f.Imports.Add(pkg.Name, f.TargetPackage)
 		f.TargetAlias = t.Alias
 	}

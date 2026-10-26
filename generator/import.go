@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/types"
 	"path"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/imports"
@@ -31,12 +32,21 @@ type Import struct {
 
 // String returns a string that may be used as an import line in a go source
 // file. Imports with aliases that match the package basename are printed without
-// an alias.
+// an alias, unless that basename is a major version such as v2: tools such as
+// goimports assume that package is named after the element before it.
 func (i Import) String() string {
-	if path.Base(i.PkgPath) == i.Alias {
+	if path.Base(i.PkgPath) == i.Alias && !isMajorVersion(i.Alias) {
 		return `"` + i.PkgPath + `"`
 	}
 	return fmt.Sprintf(`%s "%s"`, i.Alias, i.PkgPath)
+}
+
+func isMajorVersion(s string) bool {
+	if !strings.HasPrefix(s, "v") {
+		return false
+	}
+	_, err := strconv.Atoi(s[1:])
+	return err == nil
 }
 
 // Add creates an import with the given alias and path, and adds it to
