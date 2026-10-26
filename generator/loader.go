@@ -8,11 +8,14 @@ import (
 	"go/types"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
+	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
@@ -176,7 +179,19 @@ func preload(c Cacher, workingDir string, tests bool, targets []string) error {
 	if len(targets) == 0 {
 		return nil
 	}
-	pkgs, err := packages.Load(loadConfig(workingDir, tests), targets...)
+	// go list resolves a directory much more slowly than an import path,
+	// so a directory is loaded by its import path where that is easy to
+	// tell. Packages are still matched to targets by directory.
+	patterns := make([]string, len(targets))
+	for i, target := range targets {
+		patterns[i] = target
+		if filepath.IsAbs(target) {
+			if importPath, ok := importPathForDir(target); ok {
+				patterns[i] = importPath
+			}
+		}
+	}
+	pkgs, err := packages.Load(loadConfig(workingDir, tests), patterns...)
 	if err != nil {
 		return err
 	}
@@ -222,6 +237,32 @@ func preloadedGroup(pkgs []*packages.Package, target string) []*packages.Package
 		}
 	}
 	return group
+}
+
+// importPathForDir returns the import path of the package in dir, from the
+// path of the innermost module containing it. It gives up on a directory the
+// go command does not import by its path within the module, such as one
+// under vendor or testdata.
+func importPathForDir(dir string) (string, bool) {
+	var elems []string
+	for d := filepath.Clean(dir); ; d = filepath.Dir(d) {
+		if b, err := os.ReadFile(filepath.Join(d, "go.mod")); err == nil {
+			mod := modfile.ModulePath(b)
+			if mod == "" {
+				return "", false
+			}
+			slices.Reverse(elems)
+			return path.Join(append([]string{mod}, elems...)...), true
+		}
+		name := filepath.Base(d)
+		if filepath.Dir(d) == d {
+			return "", false
+		}
+		if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") || name == "testdata" || name == "vendor" {
+			return "", false
+		}
+		elems = append(elems, name)
+	}
 }
 
 func (f *Fake) findPackage() error {
