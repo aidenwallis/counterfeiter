@@ -1,22 +1,90 @@
 package generator
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/build"
 	"go/types"
 	"log"
+	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
+// loadPackages loads the target package. Its test variants, which have the
+// package type-checked again, are loaded only when its _test.go files may
+// declare the target, or when the package itself turns out not to.
 func (f *Fake) loadPackages(c Cacher, workingDir string) error {
+	tests := loadsTests(f.TargetPackage)
+	err := f.loadPackagesWith(c, workingDir, tests)
+	if err != nil || tests || f.Mode == Package || declares(f.Packages, f.TargetName) {
+		return err
+	}
+	f.loadErrors = nil
+	return f.loadPackagesWith(c, workingDir, true)
+}
+
+// loadsTests reports whether target, as NewFake and Preload take it, is
+// loaded with its tests from the start. Only a directory can be checked
+// without asking the go command where the package is.
+func loadsTests(target string) bool {
+	return filepath.IsAbs(target) && testsMayDeclareTarget(target)
+}
+
+func cacheKey(target string, tests bool) string {
+	if tests {
+		return target + " [tests]"
+	}
+	return target
+}
+
+var structDeclaration = regexp.MustCompile(`^type\s+\w+(\[.*\])?\s+struct\b`)
+
+// testsMayDeclareTarget reports whether a _test.go file in dir may declare a
+// type that could be faked, which is any type but a struct. It only reads
+// the lines of gofmt-formatted files, so it can be wrong either way, which
+// costs a load of the tests that was not needed or one more load.
+func testsMayDeclareTarget(dir string) bool {
+	files, err := filepath.Glob(filepath.Join(dir, "*_test.go"))
+	if err != nil {
+		return true
+	}
+	for _, file := range files {
+		b, err := os.ReadFile(file)
+		if err != nil {
+			return true
+		}
+		for _, line := range bytes.Split(b, []byte("\n")) {
+			if bytes.HasPrefix(line, []byte("type ")) && !structDeclaration.Match(line) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func declares(pkgs []*packages.Package, name string) bool {
+	for _, p := range pkgs {
+		if p.Types == nil {
+			continue
+		}
+		if _, ok := p.Types.Scope().Lookup(name).(*types.TypeName); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *Fake) loadPackagesWith(c Cacher, workingDir string, tests bool) error {
 	log.Println("loading packages...")
-	p, ok := c.Load(f.TargetPackage)
+	key := cacheKey(f.TargetPackage, tests)
+	p, ok := c.Load(key)
 	if ok {
 		f.Packages = p
 		log.Printf("loaded %v packages from cache\n", len(f.Packages))
@@ -31,7 +99,7 @@ func (f *Fake) loadPackages(c Cacher, workingDir string) error {
 		}
 		importPath = bp.ImportPath
 	}
-	p, err := packages.Load(loadConfig(workingDir), importPath)
+	p, err := packages.Load(loadConfig(workingDir, tests), importPath)
 	if err != nil {
 		return err
 	}
@@ -69,46 +137,63 @@ func (f *Fake) loadPackages(c Cacher, workingDir string) error {
 		return err
 	}
 	f.Packages = p
-	c.Store(f.TargetPackage, p)
+	c.Store(key, p)
 	log.Printf("loaded %v packages\n", len(f.Packages))
 	return nil
 }
 
-func loadConfig(workingDir string) *packages.Config {
+func loadConfig(workingDir string, tests bool) *packages.Config {
 	return &packages.Config{
 		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax,
 		Dir:   workingDir,
-		Tests: true,
+		Tests: tests,
 	}
 }
 
 // Preload loads the given target packages, import paths or absolute
-// directories as NewFake takes them, with a single go/packages call and
-// stores each one in the cache. Every load pays for a go list run whatever
-// it asks for, so loading the targets of many fakes together is much faster
-// than letting each fake load its own. A target that does not load cleanly
-// is left out, and NewFake loads and reports it on its own as usual.
+// directories as NewFake takes them, and stores each one in the cache. Every
+// load pays for a go list run whatever it asks for, so loading the targets
+// of many fakes together is much faster than letting each fake load its own:
+// it takes one go/packages call for the targets NewFake loads with their
+// tests and one for the rest. A target that does not load cleanly is left
+// out, and NewFake loads and reports it on its own as usual.
 func Preload(c Cacher, workingDir string, targets ...string) error {
+	var plain, withTests []string
+	for _, target := range targets {
+		if loadsTests(target) {
+			withTests = append(withTests, target)
+		} else {
+			plain = append(plain, target)
+		}
+	}
+	if err := preload(c, workingDir, false, plain); err != nil {
+		return err
+	}
+	return preload(c, workingDir, true, withTests)
+}
+
+func preload(c Cacher, workingDir string, tests bool, targets []string) error {
 	if len(targets) == 0 {
 		return nil
 	}
-	pkgs, err := packages.Load(loadConfig(workingDir), targets...)
+	pkgs, err := packages.Load(loadConfig(workingDir, tests), targets...)
 	if err != nil {
 		return err
 	}
 	for _, target := range targets {
-		if _, ok := c.Load(target); ok {
+		key := cacheKey(target, tests)
+		if _, ok := c.Load(key); ok {
 			continue
 		}
 		if group := preloadedGroup(pkgs, target); group != nil {
-			c.Store(target, group)
+			c.Store(key, group)
 		}
 	}
 	return nil
 }
 
 // preloadedGroup returns the packages that loading target on its own would
-// have returned: the package itself followed by its test variants, or nil if
+// have returned: the package itself followed by any test variants, or nil if
 // the package is missing or has errors.
 func preloadedGroup(pkgs []*packages.Package, target string) []*packages.Package {
 	var root *packages.Package
