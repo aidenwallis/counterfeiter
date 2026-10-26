@@ -117,7 +117,9 @@ func NewFake(fakeMode FakeMode, targetName string, packagePath string, fakeName 
 		opt(f)
 	}
 
-	f.Imports.Add("sync", "sync")
+	if fakeMode != Package {
+		f.Imports.Add("sync", "sync")
+	}
 	err := f.loadPackages(cache, workingDir)
 	if err != nil {
 		return nil, err
@@ -142,6 +144,13 @@ func NewFake(fakeMode FakeMode, targetName string, packagePath string, fakeName 
 		}
 	}
 	return f, nil
+}
+
+// AssertsTarget indicates whether the fake can be checked against its target
+// at compile time. An unexported target can only be named from inside its
+// package.
+func (f *Fake) AssertsTarget() bool {
+	return f.inTargetPackage || isExported(f.TargetName)
 }
 
 // IsInterface indicates whether the fake is for an interface.
@@ -200,7 +209,9 @@ func isExported(s string) bool {
 }
 
 // Generate uses the Fake to generate an implementation, optionally running
-// goimports on the output.
+// goimports on the output. The fake already imports exactly the packages it
+// uses, so goimports only formats it and groups the imports; letting it fix
+// imports would have it look up packages, which is slow in a large module.
 func (f *Fake) Generate(runImports bool) ([]byte, error) {
 	var tmpl *template.Template
 	if f.IsInterface() {
@@ -225,7 +236,7 @@ func (f *Fake) Generate(runImports bool) ([]byte, error) {
 		return nil, err
 	}
 	if runImports {
-		return imports.Process("counterfeiter_temp_process_file", b.Bytes(), nil)
+		return imports.Process("counterfeiter_temp_process_file", b.Bytes(), &imports.Options{FormatOnly: true, Comments: true, TabIndent: true, TabWidth: 8})
 	}
 	return b.Bytes(), nil
 }

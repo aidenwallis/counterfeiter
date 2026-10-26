@@ -24,6 +24,10 @@ func testImport(t *testing.T, when spec.G, it spec.S) {
 			g.Expect(Import{Alias: "foo", PkgPath: "example.com/goo/foo"}.String()).To(Equal(`"example.com/goo/foo"`))
 		})
 
+		it("names a package whose path ends in a major version, which tools assume is named after the element before it", func() {
+			g.Expect(Import{Alias: "v1", PkgPath: "k8s.io/api/core/v1"}.String()).To(Equal(`v1 "k8s.io/api/core/v1"`))
+		})
+
 		it("prints a custom alias", func() {
 			g.Expect(Import{Alias: "thinga", PkgPath: "example.com/go-thing"}.String()).To(Equal(`thinga "example.com/go-thing"`))
 		})
